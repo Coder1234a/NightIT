@@ -119,11 +119,23 @@ describe("per-block configuration", () => {
     assert.equal(fries.state, "sold_out");
   });
   test("an item past its cut-off closes itself", async () => {
-    await pool.query("SET nightit.now = '23:55'");
+    // Two things this used to get wrong. It named item 6 by number, which
+    // moves whenever the seed changes; and it set nightit.now on the pool,
+    // which lands on whichever connection answers — so the reset could go to
+    // a different one and leave a connection pinned in the future, closing
+    // the mess for a later test. The time goes straight into the comparison
+    // now, and the item is looked up by what it actually is.
+    // MIN(cutoff_at) is wrong here for the same reason the app needs
+    // night_min at all: 00:00 sorts before 23:30 as a plain time, but it is
+    // an hour and a half LATER in the night. Order by night_min or you pick
+    // the last item to close and assert that it has already closed.
     const r = await pool.query(
-      "SELECT night_min(night_now()) >= night_min(cutoff_at) AS past FROM menu_items WHERE id = 6");
-    assert.equal(r.rows[0].past, true);
-    await pool.query("SET nightit.now = '23:00'");
+      `SELECT name,
+              night_min('23:55'::time) >= night_min(cutoff_at) AS past
+         FROM menu_items ORDER BY night_min(cutoff_at) LIMIT 1`);
+    assert.ok(r.rowCount, "some item has the earliest cut-off");
+    assert.equal(r.rows[0].past, true,
+      `${r.rows[0].name} should read as closed at 23:55`);
   });
 });
 
@@ -151,8 +163,11 @@ describe("cart and total queue time", () => {
     const cfg = (await api("GET", "/payments/config")).body;
     assert.equal(r.body.subtotal_paise, F.a.price_paise, "menu price is pre-tax");
     assert.equal(r.body.tax_paise,
-      Math.round(F.a.price_paise * cfg.tax_percent / 100));
+      Math.round(F.a.price_paise * cfg.tax_percent / 100 / 100) * 100,
+      "tax rounds to the rupee");
     assert.equal(r.body.total_paise, r.body.subtotal_paise + r.body.tax_paise);
+    assert.equal(r.body.total_paise % 100, 0,
+      "the payable total is a whole number of rupees — nobody has 25p coins");
   });
 
   test("total queue time counts the people already waiting, not just cooking", async () => {

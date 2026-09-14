@@ -48,6 +48,7 @@ a block means inserting rows, not shipping a release.
 .
 ├── render.yaml       Blueprint: API + database + static frontend
 ├── docs/
+│   ├── FRONTEND.md   how to change the look without breaking it
 │   └── TEST_REPORT.md
 ├── server/           Node + Express + PostgreSQL
 │   ├── index.js      19 routes
@@ -201,13 +202,27 @@ orders. The cost is that adding blocks or menu items to the seed file does
 Both erase every order, which is exactly what you want before a demo and
 exactly what you do not want during one.
 
+## The front door
+
+A two-second intro plays once per visit — the wordmark drops in letter by
+letter over flat shapes, then the curtain lifts and the door arrives beneath it
+on a stagger. `screens/Intro.jsx`, about 2.2s end to end, all five timings in
+one object at the top of that file.
+
+It plays **once per session** (a `sessionStorage` flag), **one tap skips it**,
+and under `prefers-reduced-motion` it never runs. An intro on its third viewing
+is not charming, and a judge will see the front door more than three times.
+
 ## Menu photos
 
-`client/public/items/` is empty on purpose. Each menu row carries an
-`image_url` such as `/items/cheese-maggi.jpg`; drop a file of that name in and
-it appears. Anything missing falls back to a coloured tile, so the app never
-breaks over a photo. The README in that folder lists all 22 slugs and the size
-to shoot them at.
+Every one of the 31 catalogue items has a picture. Items that had none were
+taken out rather than shown as a coloured tile beside photographed ones. The
+fallback tile still exists so a missing file cannot break the app, but nothing
+relies on it. `client/public/items/README.md` says how to add an item back.
+
+Prices are whole rupees and tax rounds to the rupee, so every figure on screen
+is payable in cash — coins under 50 paise stopped being legal tender in 2011,
+and a counter cannot hand back 25p.
 
 ## Known limits
 

@@ -1,42 +1,39 @@
-# Menu photographs
+# Menu photos
 
-Drop a picture here for every menu item, named after the slug the database
-already stores in `menu_items.image_url`.
+One file per menu item, named after the item in lower case with hyphens.
+`Cheese Maggi` is `cheese-maggi.jpg`. The name comes from `image_url` on the
+menu row, which `server/scripts/gen_seed.py` derives from the item name — so
+if you rename an item in the seed, rename the file too.
 
-The seed sets `/items/<slug>.jpg` for each item, so a file dropped here with a
-matching name is picked up with no code change and no redeploy of the API.
+## Every item has one
 
-| File to add | Item |
-|---|---|
-| `maggi.jpg` | Maggi |
-| `cheese-maggi.jpg` | Cheese Maggi |
-| `french-fries.jpg` | French fries |
-| `peri-peri-fries.jpg` | Peri peri fries |
-| `veg-fried-rice.jpg` | Veg fried rice |
-| `paneer-fried-rice.jpg` | Paneer fried rice |
-| `veg-noodles.jpg` | Veg noodles |
-| `masala-dosa.jpg` | Masala dosa |
-| `plain-dosa.jpg` | Plain dosa |
-| `idli-vada.jpg` | Idli vada |
-| `paneer-roll.jpg` | Paneer roll |
-| `egg-roll.jpg` | Egg roll |
-| `veg-sandwich.jpg` | Veg sandwich |
-| `grilled-cheese.jpg` | Grilled cheese |
-| `pav-bhaji.jpg` | Pav bhaji |
-| `chole-bhature.jpg` | Chole bhature |
-| `cold-coffee.jpg` | Cold coffee |
-| `hot-chocolate.jpg` | Hot chocolate |
-| `lemon-tea.jpg` | Lemon tea |
-| `masala-chai.jpg` | Masala chai |
-| `lime-soda.jpg` | Fresh lime soda |
-| `banana-shake.jpg` | Banana shake |
+All 31 items in the catalogue have a picture: 0 without.
+Items that had no photo were taken out of the catalogue rather than shown as a
+coloured tile beside photographed ones — a half-illustrated menu reads worse
+than a smaller one.
 
-**Square, 400x400 or larger, JPEG, under 80 KB each.** They are shown as small
-rounded thumbnails, so detail matters less than the food filling the frame.
+The illustrations are squared to 400x400 on the app's own paper colour, so a
+thumbnail has no white box around it on a cream card. All under 20 KB.
 
-Anything missing falls back to a coloured tile automatically — the app does not
-break on a missing picture, so add them as you get them.
+## The fallback still exists
 
-Shoot them yourself at the night mess if you can. Real photographs of the actual
-counters will read far better at judging than stock images, and they cost one
-trip with a phone.
+If a file goes missing the row falls back to a coloured tile rather than
+breaking. That is a safety net, not a design — keep the set complete.
+
+## Adding an item back
+
+Two steps, both needed:
+
+1. Put the picture here. Square, 400x400 or larger, JPEG, under 80 KB, on a
+   `#fff9f4` background rather than white.
+2. Add the item to `CATALOGUE` in `server/scripts/gen_seed.py`, re-run that
+   script, and reseed.
+
+Real photographs of your own block's counter will beat stock art every time.
+If somebody is going down there, shoot them square and close.
+
+## One that is deliberately absent
+
+The sheet we were sent included a picture of a Nestle Maggi retail packet, with
+the real wordmark and pack design. That is somebody's trademark, so it is not
+in here. `maggi.jpg` is a bowl of noodles.

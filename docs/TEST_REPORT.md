@@ -95,6 +95,36 @@ glyph.
 **13. The front door's title and subtitle ran together on one line** — two
 spans in a flex row with no column wrapper.
 
+**17. The cut-off test named an item by number and poisoned the pool.** It
+asserted on `menu_items WHERE id = 6`, which becomes a different dish every
+time the seed changes, and it did `SET nightit.now` through the pool — landing
+on whichever connection answered, so the reset could go to a different one and
+leave a connection pinned in the future, closing the mess for later tests. Both
+gone: the time is passed straight into the comparison and the item is found by
+having the earliest cut-off.
+
+Writing that fix walked straight into the project's own trap: `MIN(cutoff_at)`
+picks 00:00 over 23:30, because as a plain time it is smaller — and an hour and
+a half later in the night. It orders by `night_min(cutoff_at)` now.
+
+**18. A 5% tax on whole-rupee prices still produced paise.** A ₹155 cart came
+to ₹162.75. Tax now rounds to the whole rupee on both sides — and the client
+had its own copy of that arithmetic, so both were changed together or the cart
+bar would quote one number while the gateway charged another. A test asserts
+`total_paise % 100 === 0`.
+
+**15. The uploaded art could not be shipped as sent.** The icon sheet carried
+visible Vecteezy watermarks across the Venus and Mars symbols, and the food
+sheet included a real Nestle Maggi retail packet. The three door icons are now
+drawn as inline SVG instead — sharper at any size, themeable, and ours; the
+Maggi packet was dropped and `maggi.jpg` is a bowl of noodles. The other 17
+illustrations were sliced out, background-matched to the app's paper colour so
+no white box shows on a cream card, and squared to 400x400 under 20 KB each.
+
+**16. Half-rupee prices put the screen and the bill at odds.** With the paise
+now displayed, a cart read "₹123.38" — accurate, but not a price anyone charges
+for Maggi. The seed generator now emits whole rupees only.
+
 **14. New blocks never reached the live database.** The build command seeds
 only when the database is empty — correct, or every deploy would erase the
 night's orders — but that also meant a grown seed file could never land. Added

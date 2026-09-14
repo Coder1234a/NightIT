@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NightIT — intro and entrance demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#24202d; --muted:#756d7d; --paper:#fff9f4; --card:#fffdfb; --line:#eadfd9;
+    --pink:#ff4f87; --orange:#ff6b35; --yellow:#ffd166; --lilac:#b7a9ff;
+    --mint:#a8e6cf; --blue:#8bd5ff; --shadow:#e7d7d0;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#e9dff1; color:var(--ink);
+         font-family:'Space Grotesk',system-ui,sans-serif; line-height:1.5; }
+  .wrap { display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start;
+          justify-content:center; padding:24px 16px 60px; }
+
+  /* ============================================================ phone == */
+  .app { position:relative; width:400px; max-width:100%; height:780px;
+    padding:26px 20px 76px; overflow:hidden; background:var(--paper);
+    border-radius:26px; box-shadow:0 18px 50px rgba(59,35,80,.18); }
+  .app::before { content:''; position:absolute; width:300px; height:300px;
+    right:-125px; top:-120px; border-radius:47% 53% 68% 32%;
+    background:linear-gradient(135deg,var(--yellow),#ff8fb5); opacity:.7;
+    transform:rotate(25deg); }
+  .app::after { content:''; position:absolute; width:160px; height:160px;
+    left:-108px; bottom:80px; border-radius:50%; background:var(--lilac); opacity:.35; }
+  .app > *:not(.curtain) { position:relative; z-index:1; }
+
+  .eyebrow { display:block; margin-bottom:10px; color:var(--pink);
+    font-family:'DM Mono',ui-monospace,monospace; font-size:10px;
+    letter-spacing:.18em; text-transform:uppercase; }
+  h1 { margin:0; font-family:'Fraunces',Georgia,serif; font-size:46px;
+       line-height:.95; letter-spacing:-.055em; }
+  h1 span { color:var(--pink); }
+  .hero-note { max-width:260px; margin:18px 0 0; color:var(--muted); font-size:14px; }
+  .hero-note strong { color:var(--orange); }
+  .sticker { display:inline-block; margin:34px 0 14px; padding:8px 13px;
+    border-radius:12px 12px 4px 12px; background:var(--yellow);
+    font-size:12px; font-weight:700; transform:rotate(-2deg); }
+  .door { display:flex; flex-direction:column; gap:14px; }
+  .door-btn { display:flex; align-items:center; gap:16px; width:100%; padding:18px 17px;
+    border:1px solid var(--line); border-radius:23px 23px 8px 23px; background:var(--card);
+    color:var(--ink); text-align:left; cursor:pointer; box-shadow:0 6px 0 var(--shadow);
+    transition:transform .18s, box-shadow .18s; font:inherit; }
+  .door-btn:hover { transform:translateY(-4px) rotate(-.5deg); box-shadow:0 10px 0 var(--shadow); }
+  .door-btn .blob { flex:0 0 48px; height:48px; border-radius:17px 17px 6px 17px; }
+  .blob.m { background:linear-gradient(135deg,#ffb26b,var(--orange)); }
+  .blob.l { background:linear-gradient(135deg,#c9b6ff,#a45cff); }
+  .blob.s { background:linear-gradient(135deg,#8fd8d0,#0f9b8e); }
+  .door-btn .copy { display:flex; flex-direction:column; }
+  .door-btn .t { font-size:17px; font-weight:700; }
+  .door-btn .s { margin-top:5px; color:var(--muted); font-size:12px; }
+
+  /* ==================================================== the entrance ==== */
+  /* Everything on the door starts slightly low and invisible; JS lifts them
+     one after another. One transform and one opacity per element, so it all
+     stays on the GPU. */
+  .lift { opacity:0; transform:translateY(18px); }
+  .lift.in { opacity:1; transform:none;
+             transition:opacity .5s var(--ease), transform .55s var(--ease); }
+
+  /* ==================================================== the curtain ===== */
+  .curtain { position:absolute; inset:0; z-index:9; display:grid; place-items:center;
+    background:#181322; overflow:hidden; }
+  .curtain.gone { animation:lift .7s var(--ease) forwards; }
+  @keyframes lift { to { transform:translateY(-102%); } }
+
+  /* the wordmark inside the curtain */
+  .mark { position:relative; z-index:3; display:flex; align-items:baseline;
+    font-family:'Fraunces',Georgia,serif; font-size:58px; line-height:1;
+    letter-spacing:-.055em; color:#fff8f2; white-space:nowrap; }
+  .mark .ch { display:inline-block; will-change:transform,opacity; }
+  .mark .ch.it { color:#ff79a8; }
+  .rule { position:relative; z-index:3; width:0; height:3px; margin-top:18px;
+          border-radius:3px; background:var(--pink); }
+  .tag { position:relative; z-index:3; margin-top:16px; opacity:0;
+    color:#9c93a8; font-family:'DM Mono',ui-monospace,monospace; font-size:10px;
+    letter-spacing:.28em; text-transform:uppercase; }
+
+  /* the flat shapes that fly in behind the name */
+  .shape { position:absolute; opacity:0; will-change:transform,opacity; }
+  .s1 { width:190px; height:190px; border-radius:50%; background:var(--lilac);
+        left:-56px; top:-40px; opacity:0; }
+  .s2 { width:150px; height:75px; border-radius:150px 150px 0 0; background:var(--yellow);
+        right:26px; top:52px; }
+  .s3 { width:96px; height:96px; border-radius:50%; background:var(--orange);
+        right:-26px; bottom:130px; }
+  .s4 { width:230px; height:230px; border-radius:0 230px 0 0; background:var(--pink);
+        left:-40px; bottom:-70px; }
+  .s5 { width:64px; height:64px; border-radius:22px 22px 6px 22px; background:var(--mint);
+        right:96px; bottom:56px; }
+  .s6 { width:120px; height:120px; border-radius:50%; border:5px solid var(--blue);
+        background:none; left:120px; top:-34px; }
+
+  /* ===================================================== the panel ====== */
+  .panel { width:340px; max-width:100%; padding:20px; border-radius:20px;
+    background:var(--card); box-shadow:0 12px 34px rgba(59,35,80,.14); font-size:13px; }
+  .panel h2 { margin:0 0 4px; font-size:16px; }
+  .panel .sub { margin:0 0 18px; color:var(--muted); font-size:12px; }
+  .row { margin-bottom:16px; }
+  .row label { display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:7px; font-weight:700; font-size:12px; }
+  .row label i { font-style:normal; color:var(--pink);
+    font-family:'DM Mono',ui-monospace,monospace; }
+  input[type=range] { width:100%; accent-color:var(--pink); }
+  button.act { width:100%; padding:11px 12px; border:1px solid var(--line);
+    border-radius:12px; background:var(--paper); color:var(--ink); font:inherit;
+    font-weight:700; cursor:pointer; }
+  button.act:hover { border-color:var(--pink); color:var(--pink); }
+  button.act.primary { border-color:var(--pink); background:var(--pink); color:#fff; }
+  .picks { display:grid; gap:8px; }
+  .pick { display:flex; gap:11px; align-items:flex-start; padding:11px 12px;
+    border:1px solid var(--line); border-radius:13px; background:var(--paper);
+    cursor:pointer; text-align:left; font:inherit; }
+  .pick:hover { border-color:var(--pink); }
+  .pick.on { border-color:var(--pink); background:#fff0f5; }
+  .pick b { display:block; font-size:13px; }
+  .pick s { display:block; color:var(--muted); font-size:11.5px; text-decoration:none;
+            margin-top:2px; }
+  .pick .k { flex:0 0 20px; height:20px; border-radius:6px; background:var(--line);
+    color:#fff; font-family:'DM Mono',monospace; font-size:11px; text-align:center;
+    line-height:20px; }
+  .pick.on .k { background:var(--pink); }
+  .note { margin:16px 0 0; padding:11px 12px; border-radius:11px; background:#fff6ea;
+          color:#7a5a2a; font-size:11.5px; }
+  .out { margin-top:12px; padding:11px 12px; border-radius:11px; background:#1d1a24;
+    color:#c9f7e5; font-family:'DM Mono',ui-monospace,monospace; font-size:11px;
+    white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="app" id="app">
+    <div class="curtain" id="curtain">
+      <div class="shape s1"></div><div class="shape s2"></div><div class="shape s3"></div>
+      <div class="shape s4"></div><div class="shape s5"></div><div class="shape s6"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;position:relative;z-index:3">
+        <div class="mark" id="mark"></div>
+        <div class="rule" id="rule"></div>
+        <div class="tag" id="tag">VIT night mess</div>
+      </div>
+    </div>
+
+    <span class="eyebrow lift">VIT night mess</span>
+    <h1 class="lift">Night<span>IT</span></h1>
+    <p class="hero-note lift">Order from inside your block. <strong>One code, one meal.</strong></p>
+    <span class="sticker lift">who are you tonight?</span>
+    <div class="door">
+      <button class="door-btn lift"><span class="blob m"></span><span class="copy">
+        <span class="t">Men&rsquo;s hostel</span>
+        <span class="s">Order from your block&rsquo;s night counter</span></span></button>
+      <button class="door-btn lift"><span class="blob l"></span><span class="copy">
+        <span class="t">Ladies&rsquo; hostel</span>
+        <span class="s">Order from your block&rsquo;s night counter</span></span></button>
+      <button class="door-btn lift"><span class="blob s"></span><span class="copy">
+        <span class="t">Mess staff</span>
+        <span class="s">Counter queue, scanning and the dashboard</span></span></button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Intro &amp; entrance</h2>
+    <p class="sub">Four ways the name can arrive. Pick one and tell me the numbers.</p>
+
+    <div class="row">
+      <label>How the letters arrive</label>
+      <div class="picks" id="styles">
+        <button class="pick on" data-v="drop"><span class="k">1</span><span>
+          <b>Drop</b><s>Letters fall in and settle, one after another.</s></span></button>
+        <button class="pick" data-v="wipe"><span class="k">2</span><span>
+          <b>Wipe</b><s>A bar sweeps across and leaves the name behind it.</s></span></button>
+        <button class="pick" data-v="meet"><span class="k">3</span><span>
+          <b>Meet</b><s>&ldquo;Night&rdquo; and &ldquo;IT&rdquo; slide in from opposite sides.</s></span></button>
+        <button class="pick" data-v="fade"><span class="k">4</span><span>
+          <b>Rise</b><s>Every letter lifts and fades in together, softly staggered.</s></span></button>
+      </div>
+    </div>
+
+    <div class="row">
+      <label>Gap between letters <i id="vStag">52</i> ms</label>
+      <input type="range" id="stag" min="0" max="160" value="52">
+    </div>
+    <div class="row">
+      <label>How long the name is held <i id="vHold">300</i> ms</label>
+      <input type="range" id="hold" min="0" max="2000" value="300" step="20">
+    </div>
+    <div class="row">
+      <label>Gap between the door elements <i id="vEnter">70</i> ms</label>
+      <input type="range" id="enter" min="0" max="220" value="70">
+    </div>
+    <div class="row">
+      <label>Whole thing, start to finish <i id="vTotal">–</i></label>
+      <input type="range" id="scale" min="50" max="180" value="100">
+      <div style="color:var(--muted);font-size:11px;margin-top:5px">speed, as a percentage</div>
+    </div>
+
+    <div class="row"><button class="act primary" id="replay">Play it again</button></div>
+    <div class="row"><button class="act" id="skipTest">Show me the skip (click the phone)</button></div>
+    <div class="row"><button class="act" id="entryOnly">Entrance only, no intro</button></div>
+
+    <p class="note"><b>It plays once per visit.</b> In the real app a
+      <code>sessionStorage</code> flag stops it replaying every time somebody
+      comes back to the front door — that is the difference between charming and
+      infuriating. Clicking anywhere skips it. Under reduced motion it does not
+      run at all.</p>
+
+    <div class="out" id="out"></div>
+  </div>
+</div>
+
+<script>
+const NAME = [..."NightIT"];
+const S = { variant:"drop", stag:52, hold:300, enter:70, scale:1 };
+const $ = id => document.getElementById(id);
+const app = $("app"), curtain = $("curtain"), mark = $("mark"), rule = $("rule"), tag = $("tag");
+const lifts = [...app.querySelectorAll(".lift")];
+const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let running = null;
+const ms = n => n * S.scale;
+
+// Split the wordmark into one element per letter. "IT" is tinted, exactly as
+// the heading on the real page is.
+function buildMark() {
+  mark.innerHTML = "";
+  NAME.forEach((c, i) => {
+    const s = document.createElement("span");
+    s.className = "ch" + (i >= 5 ? " it" : "");
+    s.textContent = c;
+    mark.appendChild(s);
+  });
+  return [...mark.children];
+}
+
+const START = {
+  // each variant is just a different starting pose for a letter
+  drop: () => ({ transform:"translateY(-46px) rotate(-8deg)", opacity:0 }),
+  wipe: () => ({ transform:"translateX(-14px)", opacity:0, filter:"blur(3px)" }),
+  meet: i => ({ transform:`translateX(${i < 5 ? -90 : 90}px)`, opacity:0 }),
+  fade: () => ({ transform:"translateY(20px)", opacity:0 }),
+};
+const EASE = { drop:"cubic-bezier(.18,1.5,.42,1)", wipe:"cubic-bezier(.22,1,.36,1)",
+               meet:"cubic-bezier(.2,1.1,.3,1)",  fade:"cubic-bezier(.22,1,.36,1)" };
+
+function animateLetters(chars) {
+  const per = S.variant === "meet" ? 24 : S.stag;
+  return chars.map((el, i) => {
+    const from = START[S.variant](i);
+    const to = { transform:"none", opacity:1, filter:"blur(0px)" };
+    return el.animate([from, to], {
+      duration: ms(S.variant === "drop" ? 560 : 500),
+      delay: ms(i * per), easing: EASE[S.variant], fill:"both" });
+  });
+}
+
+// The shapes are the "various elements" — flat blocks flying in from the edge
+// they already sit against, so they read as sliding into frame.
+function animateShapes() {
+  const els = [...curtain.querySelectorAll(".shape")];
+  return els.map((el, i) => el.animate(
+    [{ transform:"scale(.4)", opacity:0 }, { transform:"scale(1)", opacity:.9 }],
+    { duration: ms(680), delay: ms(70 + i * 55),
+      easing:"cubic-bezier(.2,1.2,.35,1)", fill:"both" }));
+}
+
+function done(list) { return Promise.all(list.map(a => a.finished.catch(() => {}))); }
+const wait = n => new Promise(r => setTimeout(r, n));
+
+function resetAll() {
+  if (running) { running.cancel = true; }
+  curtain.getAnimations({ subtree:true }).forEach(a => a.cancel());
+  curtain.className = "curtain";
+  curtain.style.display = "grid";
+  rule.style.width = "0"; rule.style.transition = "none";
+  tag.style.opacity = "0"; tag.style.transition = "none";
+  lifts.forEach(el => { el.classList.remove("in"); el.style.transitionDelay = ""; });
+  void curtain.offsetWidth;
+}
+
+async function enter() {
+  lifts.forEach((el, i) => {
+    el.style.transitionDelay = ms(i * S.enter) + "ms";
+    el.classList.add("in");
+  });
+}
+
+async function play(withIntro = true) {
+  resetAll();
+  const token = running = { cancel:false };
+  report();
+
+  if (!withIntro || calm) {
+    curtain.style.display = "none";
+    return enter();
+  }
+
+  const chars = buildMark();
+  const shapes = animateShapes();
+  await done(animateLetters(chars));
+  if (token.cancel) return;
+
+  // the rule draws under the name, then the strapline
+  rule.style.transition = `width ${ms(340)}ms var(--ease)`;
+  rule.style.width = mark.offsetWidth + "px";
+  tag.style.transition = `opacity ${ms(360)}ms ease ${ms(180)}ms`;
+  tag.style.opacity = "1";
+
+  await wait(ms(S.hold) + ms(340));
+  if (token.cancel) return;
+
+  curtain.classList.add("gone");
+  enter();                                   // the door rises as the curtain leaves
+  await wait(ms(700));
+  if (!token.cancel) curtain.style.display = "none";
+}
+
+// One tap anywhere gets you past it. Non-negotiable for anything that plays
+// before the content.
+app.addEventListener("pointerdown", () => {
+  if (curtain.style.display === "none" || !running || running.cancel) return;
+  running.cancel = true;
+  curtain.getAnimations({ subtree:true }).forEach(a => a.finish());
+  curtain.classList.add("gone");
+  enter();
+  setTimeout(() => { curtain.style.display = "none"; }, ms(700));
+});
+
+/* ------------------------------------------------------------- panel -- */
+$("styles").addEventListener("click", e => {
+  const b = e.target.closest(".pick"); if (!b) return;
+  [...e.currentTarget.children].forEach(x => x.classList.remove("on"));
+  b.classList.add("on"); S.variant = b.dataset.v; play();
+});
+[["stag","stag","vStag"],["hold","hold","vHold"],["enter","enter","vEnter"]]
+  .forEach(([id, key, out]) => $(id).addEventListener("input", e => {
+    S[key] = Number(e.target.value); $(out).textContent = S[key]; report(); }));
+$("stag").addEventListener("change", () => play());
+$("hold").addEventListener("change", () => play());
+$("enter").addEventListener("change", () => play());
+$("scale").addEventListener("input", e => { S.scale = Number(e.target.value)/100; report(); });
+$("scale").addEventListener("change", () => play());
+$("replay").addEventListener("click", () => play(true));
+$("entryOnly").addEventListener("click", () => play(false));
+$("skipTest").addEventListener("click", () => { play(true); });
+
+function report() {
+  const letters = S.variant === "meet" ? 24 * 6 : S.stag * (NAME.length - 1);
+  const total = Math.round(ms(letters + 560 + 340 + S.hold + 700));
+  $("vTotal").textContent = (total/1000).toFixed(1) + "s";
+  $("out").textContent =
+    `variant   ${S.variant}\nletter gap ${S.stag}ms   hold ${S.hold}ms\n` +
+    `door gap  ${S.enter}ms   speed ${Math.round(S.scale*100)}%\n` +
+    `intro ends at about ${(total/1000).toFixed(1)}s`;
+}
+
+report();
+play(true);
+if (calm) $("out").textContent +=
+  "\n\nYour system asks for reduced motion — the intro is skipped entirely, " +
+  "which is what the real app would do too.";
+</script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NightIT — bubble field demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%F0%9F%AB%A7%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --ink:#24202d; --muted:#756d7d; --paper:#fff9f4; --card:#fffdfb;
+    --line:#eadfd9; --pink:#ff4f87; --orange:#ff6b35; --yellow:#ffd166;
+    --lilac:#b7a9ff; --shadow:#e7d7d0;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#e9dff1; color:var(--ink);
+         font-family:'Space Grotesk',system-ui,-apple-system,sans-serif; line-height:1.5; }
+  .wrap { display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start;
+          justify-content:center; padding:24px 16px 60px; }
+
+  /* ---------------------------------------------------------- the phone -- */
+  .app { position:relative; width:400px; max-width:100%; min-height:760px;
+         margin:0; padding:26px 20px 76px; overflow:hidden; background:var(--paper);
+         border-radius:26px; box-shadow:0 18px 50px rgba(59,35,80,.18); }
+  .app::before { content:''; position:absolute; width:300px; height:300px;
+    right:-125px; top:-120px; border-radius:47% 53% 68% 32%;
+    background:linear-gradient(135deg,#ffd166,#ff8fb5); opacity:.7; transform:rotate(25deg); }
+  .app::after { content:''; position:absolute; width:160px; height:160px;
+    left:-108px; bottom:80px; border-radius:50%; background:var(--lilac); opacity:.35; }
+
+  /* The field sits behind everything and lets clicks through; only the
+     bubbles themselves are clickable. */
+  .bubble-field { position:absolute; inset:0; z-index:0; overflow:hidden;
+                  pointer-events:none;
+    /* they dissolve on the way up, so they never sit under the headline and
+       drain the contrast out of it */
+    -webkit-mask-image:linear-gradient(to top, #000 0 var(--reach,42%), transparent 88%);
+            mask-image:linear-gradient(to top, #000 0 var(--reach,42%), transparent 88%); }
+  .app > *:not(.bubble-field) { position:relative; z-index:1; }
+
+  .eyebrow { display:block; margin-bottom:10px; color:var(--pink);
+    font-family:'DM Mono',ui-monospace,monospace; font-size:10px;
+    letter-spacing:.18em; text-transform:uppercase; }
+  h1 { margin:0; font-family:Georgia,'Times New Roman',serif; font-size:46px;
+       line-height:.95; letter-spacing:-.055em; }
+  h1 span { color:var(--pink); }
+  .hero-note { max-width:260px; margin:18px 0 0; color:var(--muted); font-size:14px; }
+  .hero-note strong { color:var(--orange); }
+  .sticker { display:inline-block; margin:34px 0 14px; padding:8px 13px;
+    border-radius:12px 12px 4px 12px; background:var(--yellow);
+    font-size:12px; font-weight:700; transform:rotate(-2deg); }
+  .door { display:flex; flex-direction:column; gap:14px; }
+  .door-btn { display:flex; align-items:center; gap:16px; width:100%;
+    padding:18px 17px; border:1px solid var(--line); border-radius:23px 23px 8px 23px;
+    background:var(--card); color:var(--ink); text-align:left; cursor:pointer;
+    box-shadow:0 6px 0 var(--shadow); transition:transform .18s, box-shadow .18s; }
+  .door-btn:hover { transform:translateY(-4px) rotate(-.5deg); box-shadow:0 10px 0 var(--shadow); }
+  .door-btn .blob { flex:0 0 48px; height:48px; border-radius:17px 17px 6px 17px; }
+  .blob.m { background:linear-gradient(135deg,#ffb26b,#ff6b35); }
+  .blob.l { background:linear-gradient(135deg,#c9b6ff,#a45cff); }
+  .blob.s { background:linear-gradient(135deg,#8fd8d0,#0f9b8e); }
+  .door-btn .copy { display:flex; flex-direction:column; }
+  .door-btn .t { font-size:17px; font-weight:700; }
+  .door-btn .s { margin-top:5px; color:var(--muted); font-size:12px; }
+
+  /* ---------------------------------------------------------- a bubble -- */
+  /* Two nested elements on purpose: the outer one owns the rise, the inner
+     one owns the sway. One transform each, so the two animations never
+     fight over the same property. */
+  .bub { position:absolute; bottom:0; will-change:transform; pointer-events:none; }
+  .skin { position:relative; display:grid; place-items:center; border-radius:50%;
+    pointer-events:auto; cursor:pointer; will-change:transform;
+    border:1.5px solid rgba(255,255,255,.95);
+    background:
+      radial-gradient(circle at 30% 24%, rgba(255,255,255,.98) 0 7%, rgba(255,255,255,0) 34%),
+      radial-gradient(circle at 70% 76%, rgba(255,255,255,.65) 0 5%, rgba(255,255,255,0) 24%),
+      radial-gradient(circle at 50% 50%, rgba(255,255,255,.30) 0 46%,
+                      rgba(183,169,255,.30) 74%, rgba(255,143,181,.38) 100%);
+    box-shadow: inset 0 7px 14px rgba(255,255,255,.65),
+                inset 0 -9px 16px rgba(150,105,200,.22),
+                0 0 0 1px rgba(180,150,215,.16),
+                0 10px 20px rgba(59,35,80,.13);
+    backdrop-filter: blur(1px) saturate(1.15); }
+  .skin .em { pointer-events:none; user-select:none; line-height:1;
+              filter:drop-shadow(0 1px 1px rgba(0,0,0,.12)); }
+  /* the film bursting outwards, drawn once and thrown away */
+  .burst { position:absolute; border-radius:50%; border:2px solid rgba(255,255,255,.9);
+           pointer-events:none; }
+
+  /* --------------------------------------------------------- the panel -- */
+  body.dark { background:#191420; }
+  body.dark .app { --paper:#221d2b; --card:#2b2434; --ink:#fff8f2; --muted:#a99fb3;
+                   --line:#3a3145; --shadow:#171220; }
+  body.dark .app h1 { color:#fff8f2; }
+  body.dark .app h1 span { color:#ff79a8; }
+  body.dark .skin { border-color:rgba(255,255,255,.5);
+    box-shadow: inset 0 7px 14px rgba(255,255,255,.20),
+                inset 0 -9px 16px rgba(90,60,130,.4),
+                0 10px 22px rgba(0,0,0,.35); }
+  .panel { width:330px; max-width:100%; padding:20px; border-radius:20px;
+           background:var(--card); box-shadow:0 12px 34px rgba(59,35,80,.14);
+           font-size:13px; }
+  .panel h2 { margin:0 0 4px; font-size:16px; }
+  .panel .sub { margin:0 0 18px; color:var(--muted); font-size:12px; }
+  .row { margin-bottom:16px; }
+  .row label { display:flex; justify-content:space-between; align-items:baseline;
+               margin-bottom:6px; font-weight:700; font-size:12px; }
+  .row label i { font-style:normal; color:var(--pink);
+                 font-family:'DM Mono',ui-monospace,monospace; }
+  input[type=range] { width:100%; accent-color:var(--pink); }
+  select, button.act { width:100%; padding:10px 12px; border:1px solid var(--line);
+    border-radius:12px; background:var(--paper); color:var(--ink); font:inherit; }
+  button.act { cursor:pointer; font-weight:700; }
+  button.act:hover { border-color:var(--pink); color:var(--pink); }
+  .sounds { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .sounds button { padding:9px 6px; border:1px solid var(--line); border-radius:11px;
+    background:var(--paper); color:var(--ink); font:inherit; font-size:12px; cursor:pointer; }
+  .sounds button.on { border-color:var(--pink); background:#fff0f5; color:var(--pink);
+                      font-weight:700; }
+  .stat { display:flex; justify-content:space-between; padding:9px 11px;
+          border-radius:11px; background:var(--paper);
+          font-family:'DM Mono',ui-monospace,monospace; font-size:11px; color:var(--muted); }
+  .stat b { color:var(--ink); }
+  .hint { margin:14px 0 0; padding:11px 12px; border-radius:11px; background:#fff6ea;
+          color:#7a5a2a; font-size:11.5px; }
+  .out { margin-top:14px; padding:11px 12px; border-radius:11px; background:#1d1a24;
+         color:#c9f7e5; font-family:'DM Mono',ui-monospace,monospace; font-size:11px;
+         white-space:pre-wrap; word-break:break-all; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- the phone ------------------------------------------------------- -->
+  <div class="app" id="app">
+    <div class="bubble-field" id="field"></div>
+
+    <span class="eyebrow">VIT night mess</span>
+    <h1>Night<span>IT</span></h1>
+    <p class="hero-note">Order from inside your block. <strong>One code, one meal.</strong></p>
+
+    <span class="sticker">who are you tonight?</span>
+    <div class="door">
+      <button class="door-btn"><span class="blob m"></span><span class="copy">
+        <span class="t">Men&rsquo;s hostel</span>
+        <span class="s">Order from your block&rsquo;s night counter</span></span></button>
+      <button class="door-btn"><span class="blob l"></span><span class="copy">
+        <span class="t">Ladies&rsquo; hostel</span>
+        <span class="s">Order from your block&rsquo;s night counter</span></span></button>
+      <button class="door-btn"><span class="blob s"></span><span class="copy">
+        <span class="t">Mess staff</span>
+        <span class="s">Counter queue, scanning and the dashboard</span></span></button>
+    </div>
+  </div>
+
+  <!-- the controls ---------------------------------------------------- -->
+  <div class="panel">
+    <h2>Bubble field</h2>
+    <p class="sub">Pop one. Tune it. Tell me which numbers you want kept.</p>
+
+    <div class="row">
+      <label>How many at once <i id="vCount">11</i></label>
+      <input type="range" id="count" min="3" max="26" value="11">
+    </div>
+    <div class="row">
+      <label>Seconds to cross the screen <i id="vSpeed">17</i></label>
+      <input type="range" id="speed" min="6" max="34" value="17">
+    </div>
+    <div class="row">
+      <label>Bubble size <i id="vSize">46</i></label>
+      <input type="range" id="size" min="22" max="86" value="46">
+    </div>
+    <div class="row">
+      <label>How much they wander <i id="vSway">26</i></label>
+      <input type="range" id="sway" min="0" max="70" value="26">
+    </div>
+    <div class="row">
+      <label>Visibility <i id="vOpacity">0.85</i></label>
+      <input type="range" id="opacity" min="20" max="100" value="85">
+    </div>
+    <div class="row">
+      <label>How high before they dissolve <i id="vReach">42</i></label>
+      <input type="range" id="reach" min="0" max="85" value="42">
+    </div>
+
+    <div class="row">
+      <label>Pop sound</label>
+      <div class="sounds" id="sounds">
+        <button data-s="pop" class="on">Pop</button>
+        <button data-s="droplet">Droplet</button>
+        <button data-s="bloop">Deep bloop</button>
+        <button data-s="fizz">Fizz</button>
+        <button data-s="chime">Chime</button>
+        <button data-s="none">Silent</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>Volume <i id="vVol">0.35</i></label>
+      <input type="range" id="vol" min="0" max="100" value="35">
+    </div>
+
+    <div class="row">
+      <label>Emoji set</label>
+      <select id="set">
+        <option value="night">Night mess (Maggi, dosa, chai…)</option>
+        <option value="wide">Everything edible</option>
+        <option value="drinks">Drinks only</option>
+        <option value="minimal">Four items only</option>
+      </select>
+    </div>
+
+    <div class="row"><button class="act" id="popAll">Pop them all</button></div>
+    <div class="row"><button class="act" id="dark">Try it on the dark theme</button></div>
+
+    <div class="stat"><span>frames per second</span><b id="fps">–</b></div>
+    <div class="stat" style="margin-top:8px"><span>popped so far</span><b id="pops">0</b></div>
+
+    <p class="hint">Sound needs one click anywhere first — browsers block audio until
+      you interact with the page. Pop a bubble and you will hear it.</p>
+
+    <div class="out" id="out">settings will appear here</div>
+  </div>
+</div>
+
+<script>
+/* ===================================================================== *
+ * Sound. Synthesised on the spot with WebAudio — no files to load, no
+ * network, and it works the same offline. Every voice is a short envelope
+ * so it can never drone.
+ * ===================================================================== */
+let ac = null;
+const audio = () => (ac ||= new (window.AudioContext || window.webkitAudioContext)());
+
+function noiseBuffer(ctx, seconds) {
+  const b = ctx.createBuffer(1, ctx.sampleRate * seconds, ctx.sampleRate);
+  const d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return b;
+}
+
+const VOICES = {
+  // a soap film letting go: a click, then the cavity resonating down
+  pop(ctx, t, g) {
+    const o = ctx.createOscillator(), env = ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(760, t);
+    o.frequency.exponentialRampToValueAtTime(150, t + 0.075);
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(g, t + 0.006);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(env).connect(ctx.destination); o.start(t); o.stop(t + 0.14);
+
+    const n = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), ng = ctx.createGain();
+    n.buffer = noiseBuffer(ctx, 0.05);
+    bp.type = "bandpass"; bp.frequency.value = 2100; bp.Q.value = 1.1;
+    ng.gain.setValueAtTime(g * 0.5, t);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
+    n.connect(bp).connect(ng).connect(ctx.destination); n.start(t); n.stop(t + 0.05);
+  },
+  // water landing in water — brighter, and it rings a little longer
+  droplet(ctx, t, g) {
+    const o = ctx.createOscillator(), env = ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(1500, t);
+    o.frequency.exponentialRampToValueAtTime(420, t + 0.13);
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(g, t + 0.008);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+    o.connect(env).connect(ctx.destination); o.start(t); o.stop(t + 0.24);
+  },
+  // the big slow one at the bottom of the glass
+  bloop(ctx, t, g) {
+    const o = ctx.createOscillator(), lp = ctx.createBiquadFilter(), env = ctx.createGain();
+    o.type = "triangle";
+    o.frequency.setValueAtTime(330, t);
+    o.frequency.exponentialRampToValueAtTime(72, t + 0.19);
+    lp.type = "lowpass"; lp.frequency.value = 900;
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(g * 1.15, t + 0.012);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    o.connect(lp).connect(env).connect(ctx.destination); o.start(t); o.stop(t + 0.32);
+  },
+  // dry and papery, closest to a real soap bubble at close range
+  fizz(ctx, t, g) {
+    const n = ctx.createBufferSource(), hp = ctx.createBiquadFilter(), env = ctx.createGain();
+    n.buffer = noiseBuffer(ctx, 0.14);
+    hp.type = "highpass"; hp.frequency.setValueAtTime(900, t);
+    hp.frequency.exponentialRampToValueAtTime(4200, t + 0.12);
+    env.gain.setValueAtTime(g * 0.85, t);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    n.connect(hp).connect(env).connect(ctx.destination); n.start(t); n.stop(t + 0.14);
+  },
+  // not a pop at all — a soft bell, if you want it pretty over accurate
+  chime(ctx, t, g) {
+    [1, 2.02, 3.01].forEach((mult, i) => {
+      const o = ctx.createOscillator(), env = ctx.createGain();
+      o.type = "sine"; o.frequency.value = 660 * mult;
+      env.gain.setValueAtTime(0.0001, t);
+      env.gain.exponentialRampToValueAtTime(g / (i + 1.6), t + 0.01);
+      env.gain.exponentialRampToValueAtTime(0.0001, t + 0.55 - i * 0.12);
+      o.connect(env).connect(ctx.destination); o.start(t); o.stop(t + 0.6);
+    });
+  },
+  none() {},
+};
+
+function playPop() {
+  if (S.sound === "none") return;
+  const ctx = audio();
+  if (ctx.state === "suspended") ctx.resume();
+  // a little pitch scatter so ten pops in a row don't sound mechanical
+  VOICES[S.sound](ctx, ctx.currentTime, S.vol * (0.85 + Math.random() * 0.3));
+}
+
+/* ===================================================================== *
+ * The field.
+ * ===================================================================== */
+const EMOJI = {
+  night:  ["🍜","🍟","🍚","🥟","🫓","🍳","☕","🧋","🥤","🍵","🥪","🧀","🍫","🥞","🌯","🍩"],
+  wide:   ["🍜","🍟","🍕","🍔","🌮","🍣","🍩","🍪","🥐","🍇","🍎","🥑","🍿","🧁","🍫","🥨",
+           "🍛","🥗","🍤","🥟","🍧","🍰"],
+  drinks: ["☕","🧋","🥤","🍵","🧃","🥛","🍹","🫖"],
+  minimal:["🍜","🍟","☕","🥟"],
+};
+
+const S = { count:11, speed:17, size:46, sway:26, opacity:0.85, reach:42,
+            sound:"pop", vol:0.35, set:"night" };
+
+const field = document.getElementById("field");
+const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let popped = 0;
+
+function rnd(a, b) { return a + Math.random() * (b - a); }
+
+// One bubble: an outer element that rises and an inner one that sways, so the
+// two animations never write to the same transform.
+function spawn(startProgress) {
+  const H = field.clientHeight, W = field.clientWidth;
+  const set = EMOJI[S.set];
+  const size = S.size * rnd(0.72, 1.28);
+
+  const bub = document.createElement("div");
+  bub.className = "bub";
+  bub.style.left = rnd(4, Math.max(6, W - size - 4)) + "px";
+  bub.style.opacity = S.opacity * rnd(0.75, 1);
+
+  const skin = document.createElement("div");
+  skin.className = "skin";
+  skin.style.width = skin.style.height = size + "px";
+
+  const em = document.createElement("span");
+  em.className = "em";
+  em.textContent = set[Math.floor(Math.random() * set.length)];
+  em.style.fontSize = Math.round(size * 0.44) + "px";
+
+  skin.appendChild(em); bub.appendChild(skin); field.appendChild(bub);
+
+  const travel = H + size + 40;
+  const dur = S.speed * 1000 * rnd(0.75, 1.3);
+
+  // the rise
+  const rise = bub.animate(
+    [{ transform: `translateY(${size + 20}px)` },
+     { transform: `translateY(-${travel}px)` }],
+    { duration: dur, easing: "linear",
+      // start part-way up so the screen isn't empty on load
+      delay: startProgress ? -dur * Math.random() : 0, fill: "forwards" });
+
+  // the wander, and a slow tumble
+  const drift = skin.animate(
+    [{ transform: `translateX(-${S.sway / 2}px) rotate(-6deg)` },
+     { transform: `translateX(${S.sway / 2}px) rotate(6deg)` }],
+    { duration: rnd(3200, 6200), direction: "alternate",
+      iterations: Infinity, easing: "ease-in-out" });
+
+  if (calm) { rise.pause(); drift.pause(); }
+
+  rise.onfinish = () => { bub.remove(); if (alive()) spawn(false); };
+  skin.addEventListener("pointerdown", e => { e.stopPropagation(); pop(bub, skin, rise, drift, size); });
+  return bub;
+}
+
+function alive() { return field.childElementCount < S.count; }
+
+// A pop: the film bursts outwards and the emoji drops out of it. The rise is
+// cancelled at exactly where it had got to, so nothing jumps.
+function pop(bub, skin, rise, drift, size) {
+  if (bub.dataset.dead) return;
+  bub.dataset.dead = "1";
+  skin.style.pointerEvents = "none";
+  playPop();
+  popped++; document.getElementById("pops").textContent = popped;
+
+  // freeze the rise where it actually is
+  const now = getComputedStyle(bub).transform;
+  rise.cancel(); drift.cancel();
+  bub.style.transform = now;
+
+  const m = new DOMMatrixReadOnly(now);
+  const y = m.m42;                                   // current translateY
+  const fall = field.clientHeight - (bub.offsetTop + y) + 80;
+
+  // the film, thrown outwards and gone
+  const ring = document.createElement("div");
+  ring.className = "burst";
+  ring.style.width = ring.style.height = size + "px";
+  ring.style.left = ring.style.top = "0";
+  skin.appendChild(ring);
+  ring.animate([{ transform:"scale(1)", opacity:.95 },
+                { transform:"scale(1.6)", opacity:0 }],
+               { duration:340, easing:"cubic-bezier(.2,.8,.3,1)", fill:"forwards" });
+  skin.animate([{ transform:"scale(1)", opacity:1 },
+                { transform:"scale(1.22)", opacity:0 }],
+               { duration:190, easing:"ease-out", fill:"forwards" });
+
+  // the emoji falls out and keeps falling
+  const em = skin.querySelector(".em");
+  em.style.position = "absolute";
+  em.animate([{ transform:"translateY(0) rotate(0deg)", opacity:1 },
+              { transform:`translateY(${fall}px) rotate(${rnd(-90,90)}deg)`, opacity:0 }],
+             // slow out of the gate then accelerating: gravity, roughly
+             { duration: 900 + fall, easing:"cubic-bezier(.45,0,.85,.5)", fill:"forwards" })
+    .onfinish = () => { bub.remove(); if (alive()) spawn(false); };
+}
+
+function rebuild() {
+  field.innerHTML = "";
+  for (let i = 0; i < S.count; i++) spawn(true);
+}
+
+/* -------------------------------------------------------------- panel -- */
+function bind(id, key, fmt, scale = 1) {
+  const el = document.getElementById(id), out = document.getElementById("v" + id[0].toUpperCase() + id.slice(1));
+  el.addEventListener("input", () => {
+    S[key] = Number(el.value) * scale;
+    if (out) out.textContent = fmt ? fmt(S[key]) : S[key];
+    report();
+    if (["count","speed","size","sway","opacity"].includes(key)) rebuild();
+  });
+}
+bind("count","count"); bind("speed","speed"); bind("size","size"); bind("sway","sway");
+bind("opacity","opacity", v => v.toFixed(2), 0.01);
+document.getElementById("reach").addEventListener("input", e => {
+  S.reach = Number(e.target.value);
+  document.getElementById("vReach").textContent = S.reach;
+  field.style.setProperty("--reach", S.reach + "%");
+  report();
+});
+document.getElementById("vol").addEventListener("input", e => {
+  S.vol = Number(e.target.value) / 100;
+  document.getElementById("vVol").textContent = S.vol.toFixed(2);
+  playPop(); report();
+});
+document.getElementById("sounds").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  [...e.currentTarget.children].forEach(x => x.classList.remove("on"));
+  b.classList.add("on"); S.sound = b.dataset.s; playPop(); report();
+});
+document.getElementById("set").addEventListener("change", e => {
+  S.set = e.target.value; rebuild(); report();
+});
+document.getElementById("dark").addEventListener("click", e => {
+  const on = document.body.classList.toggle("dark");
+  e.target.textContent = on ? "Back to the light theme" : "Try it on the dark theme";
+});
+document.getElementById("popAll").addEventListener("click", () => {
+  [...field.children].forEach((b, i) =>
+    setTimeout(() => b.querySelector(".skin")?.dispatchEvent(new Event("pointerdown")), i * 110));
+});
+
+function report() {
+  document.getElementById("out").textContent =
+    `count ${S.count}   rise ${S.speed}s   size ${S.size}px   sway ${S.sway}px\n` +
+    `opacity ${S.opacity.toFixed(2)}   dissolve above ${S.reach}%\n` +
+    `sound ${S.sound} @ ${S.vol.toFixed(2)}   set ${S.set}`;
+}
+
+/* ---------------------------------------------------------------- fps -- */
+let last = performance.now(), frames = 0;
+(function tick(t) {
+  frames++;
+  if (t - last >= 1000) {
+    document.getElementById("fps").textContent = frames + " fps";
+    frames = 0; last = t;
+  }
+  requestAnimationFrame(tick);
+})(performance.now());
+
+// stop everything while the tab is in the background
+document.addEventListener("visibilitychange", () => {
+  field.getAnimations({ subtree:true }).forEach(a =>
+    document.hidden ? a.pause() : a.play());
+});
+
+report();
+rebuild();
+if (calm) document.getElementById("out").textContent +=
+  "\n\nYour system asks for reduced motion, so the bubbles are held still. " +
+  "In the real app they would not be drawn at all.";
+</script>
+</body>
+</html>

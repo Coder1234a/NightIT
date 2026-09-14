@@ -6,10 +6,13 @@ MENS   = list("ABCDKLMNPQRT")            # men's hostel blocks at VIT Vellore
 LADIES = list("ABCDEFGHJS")              # ladies' hostel blocks
 
 # name, base price in paise, cooking minutes, cut-off
+# Every item here has a picture in client/public/items. Items without one were
+# taken out rather than shown as a coloured tile next to photographed ones —
+# a half-illustrated menu looks worse than a smaller one.
 CATALOGUE = [
     ("Maggi", 4000, 6, "00:15"), ("Cheese Maggi", 5500, 7, "00:15"),
     ("Egg Maggi", 5500, 7, "00:15"), ("Masala Maggi", 4500, 6, "00:15"),
-    ("French fries", 6000, 9, "00:00"), ("Peri peri fries", 7000, 9, "00:00"),
+    
     ("Cheese garlic bread", 7000, 8, "00:00"), ("Veg momos", 7000, 11, "23:45"),
     ("Paneer momos", 8500, 12, "23:45"), ("Veg fried rice", 9000, 14, "23:45"),
     ("Egg fried rice", 9500, 14, "23:45"), ("Paneer fried rice", 11000, 15, "23:45"),
@@ -17,16 +20,16 @@ CATALOGUE = [
     ("Egg noodles", 9000, 12, "23:45"), ("Schezwan noodles", 9000, 13, "23:45"),
     ("Plain dosa", 5000, 9, "23:30"), ("Masala dosa", 7000, 11, "23:30"),
     ("Onion uttapam", 6500, 12, "23:30"), ("Idli vada", 4500, 7, "23:30"),
-    ("Ghee podi idli", 5500, 8, "23:30"), ("Aloo paratha", 6000, 11, "23:30"),
-    ("Paneer roll", 8000, 10, "23:45"), ("Egg roll", 6500, 9, "23:45"),
-    ("Veg sandwich", 5000, 6, "00:00"), ("Grilled cheese", 6000, 7, "00:00"),
-    ("Veg burger", 7000, 9, "00:00"), ("Vada pav", 3500, 5, "00:00"),
-    ("Pav bhaji", 7500, 12, "23:45"), ("Chole bhature", 8000, 13, "23:30"),
+    ("Ghee podi idli", 5500, 8, "23:30"), 
+    
+    
+    ("Veg burger", 7000, 9, "00:00"), 
+    ("Pav bhaji", 7500, 12, "23:45"), 
     ("Bread omelette", 4500, 6, "00:00"), ("Boiled eggs", 3000, 4, "00:15"),
-    ("Cold coffee", 5000, 4, "00:20"), ("Filter coffee", 2500, 3, "00:20"),
-    ("Hot chocolate", 5500, 5, "00:20"), ("Masala chai", 2000, 3, "00:20"),
+    ("Filter coffee", 2500, 3, "00:20"),
+    ("Masala chai", 2000, 3, "00:20"),
     ("Green tea", 2000, 3, "00:20"), ("Lemon tea", 2500, 3, "23:55"),
-    ("Fresh lime soda", 3500, 3, "00:20"), ("Buttermilk", 2500, 2, "00:20"),
+    ("Fresh lime soda", 3500, 3, "00:20"), 
     ("Banana shake", 6500, 5, "00:15"), ("Chocolate shake", 7000, 5, "00:15"),
     ("Oreo shake", 7500, 6, "00:15"),
 ]
@@ -76,7 +79,9 @@ def main():
         # blocks look alike
         picks = random.sample(CATALOGUE, PER_COUNTER)
         for name, price, mins, cut in picks:
-            bump = random.choice([-500, -250, 0, 0, 250, 500, 750])
+            # whole rupees only — a half-rupee price shows fine but reads
+            # oddly on a bill
+            bump = random.choice([-500, 0, 0, 500, 1000])
             rows.append(f"  ({ci},'{sq(name)}',{max(2000, price + bump)},{mins},"
                         f"'{cut}','/items/{slug(name)}.jpg')")
     out.write("INSERT INTO menu_items (counter_id, name, price_paise, prep_minutes, "

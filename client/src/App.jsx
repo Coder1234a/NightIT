@@ -9,6 +9,19 @@ import Counter from "./screens/Counter.jsx";
 import Admin from "./screens/Admin.jsx";
 import Say from "./screens/Say.jsx";
 import LiveOrder from "./screens/LiveOrder.jsx";
+import Intro from "./screens/Intro.jsx";
+
+/* ----------------------------------------------------------------- icons -- */
+const Glyph = ({ children }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
+);
+const Mars   = () => <Glyph><circle cx="10" cy="14" r="6.4" /><path d="M14.8 9.2 20.4 3.6" />
+                       <path d="M15.2 3.6h5.2v5.2" /></Glyph>;
+const Venus  = () => <Glyph><circle cx="12" cy="9" r="6.4" /><path d="M12 15.4v6.2" />
+                       <path d="M8.6 18.6h6.8" /></Glyph>;
+const Toque  = () => <Glyph><path d="M6.5 13.4a4.1 4.1 0 1 1 1.9-7.7 4.3 4.3 0 0 1 7.2 0 4.1 4.1 0 1 1 1.9 7.7z" />
+                       <path d="M6.5 13.4v5.2h11v-5.2" /><path d="M6.5 16.4h11" /></Glyph>;
 
 const LAST_ORDER = "nightit.order";
 const ROLE = "nightit.role";
@@ -56,7 +69,8 @@ function Door() {
   const nav = useNavigate();
 
   return (
-    <div className="app">
+    <div className="app enter">
+      <Intro />
       <div className="topline">
         <div>
           <span className="eyebrow">VIT night mess</span>
@@ -73,17 +87,17 @@ function Door() {
       <span className="sticker">who are you tonight?</span>
       <div className="door">
         <button className="door-btn" onClick={() => nav("/mens")}>
-          <span className="blob m" />
+          <span className="blob m"><Mars /></span>
           <span><span className="t">Men&rsquo;s hostel</span>
             <span className="s">Order from your block&rsquo;s night counter</span></span>
         </button>
         <button className="door-btn" onClick={() => nav("/ladies")}>
-          <span className="blob l" />
+          <span className="blob l"><Venus /></span>
           <span><span className="t">Ladies&rsquo; hostel</span>
             <span className="s">Order from your block&rsquo;s night counter</span></span>
         </button>
         <button className="door-btn" onClick={() => nav("/staff")}>
-          <span className="blob s" />
+          <span className="blob s"><Toque /></span>
           <span><span className="t">Mess staff</span>
             <span className="s">Counter queue, scanning and the dashboard</span></span>
         </button>

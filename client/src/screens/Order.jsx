@@ -41,7 +41,9 @@ export default function Order({ hostelType, regNo, setRegNo, onOrdered }) {
     .map(([id, qty]) => ({ item: menu.find(m => m.id === Number(id)), qty }))
     .filter(l => l.item);
   const subtotal = lines.reduce((s, l) => s + l.item.price_paise * l.qty, 0);
-  const tax = Math.round(subtotal * taxPct / 100);
+  // Same rounding the server uses, to the whole rupee — if the two disagree
+  // the cart bar quotes one number and the gateway charges another.
+  const tax = Math.round(subtotal * taxPct / 100 / 100) * 100;
   // The kitchen cooks a cart together, so the wait is its slowest item, not the
   // sum of them. Then add the people already queued at this counter.
   const cook = lines.reduce((s, l) => Math.max(s, l.item.prep_minutes * 60), 0);

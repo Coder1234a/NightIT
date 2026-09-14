@@ -44,7 +44,10 @@ export const api = {
   summary:       (hostelType)   => call("GET",  `/admin/summary${hostelType ? `?hostel_type=${hostelType}` : ""}`),
 };
 
-export const rupees = paise => "₹" + (paise / 100).toFixed(0);
+// Show the paise only when there are any. Rounding ₹67.50 to "₹68" on screen
+// while charging 6750 paise is a discrepancy a payments judge will find.
+export const rupees = paise =>
+  "₹" + (paise % 100 === 0 ? paise / 100 : (paise / 100).toFixed(2));
 
 // "12 min" reads better than "720 seconds" on a phone at midnight.
 export function humanWait(seconds) {

@@ -1,0 +1,55 @@
+
+/* ==================================================================
+   FRONT-DOOR INTRO
+   The curtain that plays once per visit, and the staggered entrance
+   the door makes underneath it. Paired with screens/Intro.jsx.
+   ================================================================== */
+.ni-curtain { position:absolute; inset:0; z-index:40; display:grid; place-items:center;
+  background:#181322; overflow:hidden; }
+.ni-gone { animation:niLift .7s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes niLift { to { transform:translateY(-102%); } }
+
+.ni-stack { position:relative; z-index:3; display:flex; flex-direction:column;
+            align-items:center; }
+.ni-mark { display:flex; align-items:baseline; white-space:nowrap;
+  font-family:'Fraunces',Georgia,serif; font-size:58px; line-height:1;
+  letter-spacing:-.055em; color:#fff8f2; }
+.ni-ch { display:inline-block; will-change:transform,opacity; }
+.ni-ch.it { color:#ff79a8; }
+.ni-rule { width:0; height:3px; margin-top:18px; border-radius:3px; background:var(--pink); }
+.ni-tag { margin-top:16px; opacity:0; color:#9c93a8;
+  font-family:'DM Mono',ui-monospace,monospace; font-size:10px;
+  letter-spacing:.28em; text-transform:uppercase; }
+
+.ni-shape { position:absolute; opacity:0; will-change:transform,opacity; }
+.ni-shape.s1 { width:190px; height:190px; border-radius:50%; background:var(--lilac);
+               left:-56px; top:-40px; }
+.ni-shape.s2 { width:150px; height:75px; border-radius:150px 150px 0 0;
+               background:var(--yellow); right:26px; top:52px; }
+.ni-shape.s3 { width:96px; height:96px; border-radius:50%; background:var(--orange);
+               right:-26px; bottom:130px; }
+.ni-shape.s4 { width:230px; height:230px; border-radius:0 230px 0 0; background:var(--pink);
+               left:-40px; bottom:-70px; }
+.ni-shape.s5 { width:64px; height:64px; border-radius:22px 22px 6px 22px;
+               background:var(--mint); right:96px; bottom:56px; }
+.ni-shape.s6 { width:120px; height:120px; border-radius:50%; border:5px solid var(--blue);
+               left:120px; top:-34px; }
+
+/* The door arriving underneath, one element after another. Pure CSS — the
+   delays come from nth-child, so no JSX has to carry an index. */
+.enter > *:not(.ni-curtain) { animation:niIn .55s cubic-bezier(.22,1,.36,1) both; }
+.enter > *:nth-child(2) { animation-delay:0ms; }
+.enter > *:nth-child(3) { animation-delay:70ms; }
+.enter > *:nth-child(4) { animation-delay:140ms; }
+.enter > *:nth-child(5) { animation-delay:210ms; }
+.enter > *:nth-child(6) { animation-delay:280ms; }
+.enter .door > * { animation:niIn .55s cubic-bezier(.22,1,.36,1) both; }
+.enter .door > *:nth-child(1) { animation-delay:300ms; }
+.enter .door > *:nth-child(2) { animation-delay:370ms; }
+.enter .door > *:nth-child(3) { animation-delay:440ms; }
+@keyframes niIn { from { opacity:0; transform:translateY(18px); } }
+
+/* Nobody who asked for less motion gets any of this. */
+@media (prefers-reduced-motion:reduce) {
+  .enter > *, .enter .door > * { animation:none !important; }
+}

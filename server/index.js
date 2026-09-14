@@ -8,7 +8,11 @@ const { pool } = require("./db");
 // GST on prepared food. Menu prices are shown excluding tax and it is added at
 // checkout, which is how the mess already prices its board.
 const TAX_PERCENT = Number(process.env.TAX_PERCENT || 5);
-const taxOn = subtotal => Math.round(subtotal * TAX_PERCENT / 100);
+// Rounded to the whole rupee, not the paisa. Coins below 50 paise have not
+// been legal tender in India since 2011, and a night mess taking cash cannot
+// hand back 25p — so a bill that says ₹162.75 is a bill nobody can settle.
+const taxOn = subtotal =>
+  Math.round(subtotal * TAX_PERCENT / 100 / 100) * 100;
 
 const app = express();
 app.use(cors());
