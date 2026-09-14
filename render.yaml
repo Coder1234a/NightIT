@@ -1,0 +1,34 @@
+# Render Blueprint. This file MUST sit at the repository root - Render does not
+# look inside subfolders for it.
+#
+# In Render: New > Blueprint > pick this repo. It creates the web service and a
+# free PostgreSQL database and wires DATABASE_URL between them automatically.
+services:
+  - type: web
+    name: nightit-api
+    runtime: node
+    rootDir: server            # the code lives here; render.yaml does not
+    plan: free
+    buildCommand: npm ci && npm run migrate
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nightit-db
+          property: connectionString
+      # Pins the app clock so a 6 AM demo still shows an open mess.
+      # Set it to 23:00 in the Render dashboard before judging. Leave it blank
+      # the rest of the time so the real clock is used.
+      - key: DEMO_TIME
+        sync: false
+
+databases:
+  - name: nightit-db
+    databaseName: nightit
+    plan: free
+
+# NOTE: buildCommand deliberately runs `npm run migrate` WITHOUT --seed.
+# The seed file truncates every table. If --seed were here, every single
+# deploy would erase the night's real orders. Seed once, by hand. The README
+# says how.
