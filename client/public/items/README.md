@@ -1,7 +1,7 @@
 # Menu photos
 
 One file per menu item, named after the item in lower case with hyphens.
-`Cheese Maggi` is `cheese-maggi.jpg`. The name comes from `image_url` on the
+`Cheese Maggi` is `cheese-maggi.png`. The name comes from `image_url` on the
 menu row, which `server/scripts/gen_seed.py` derives from the item name — so
 if you rename an item in the seed, rename the file too.
 
@@ -12,8 +12,9 @@ Items that had no photo were taken out of the catalogue rather than shown as a
 coloured tile beside photographed ones — a half-illustrated menu reads worse
 than a smaller one.
 
-The illustrations are squared to 400x400 on the app's own paper colour, so a
-thumbnail has no white box around it on a cream card. All under 20 KB.
+The illustrations are squared to 400x400 as transparent PNGs, so the tile takes
+whatever colour the card is — cream in light mode, near-black in dark. All
+under 31 KB.
 
 ## The fallback still exists
 
@@ -24,8 +25,9 @@ breaking. That is a safety net, not a design — keep the set complete.
 
 Two steps, both needed:
 
-1. Put the picture here. Square, 400x400 or larger, JPEG, under 80 KB, on a
-   `#fff9f4` background rather than white.
+1. Put the picture here. Square, 400x400 or larger, **PNG with a transparent
+   background**, under 80 KB. Transparency matters: a white or cream box
+   glares out of a dark card.
 2. Add the item to `CATALOGUE` in `server/scripts/gen_seed.py`, re-run that
    script, and reseed.
 
@@ -36,4 +38,4 @@ If somebody is going down there, shoot them square and close.
 
 The sheet we were sent included a picture of a Nestle Maggi retail packet, with
 the real wordmark and pack design. That is somebody's trademark, so it is not
-in here. `maggi.jpg` is a bowl of noodles.
+in here. `maggi.png` is a bowl of noodles.

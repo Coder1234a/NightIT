@@ -83,7 +83,7 @@ def main():
             # oddly on a bill
             bump = random.choice([-500, 0, 0, 500, 1000])
             rows.append(f"  ({ci},'{sq(name)}',{max(2000, price + bump)},{mins},"
-                        f"'{cut}','/items/{slug(name)}.jpg')")
+                        f"'{cut}','/items/{slug(name)}.png')")
     out.write("INSERT INTO menu_items (counter_id, name, price_paise, prep_minutes, "
               "cutoff_at, image_url) VALUES\n" + ",\n".join(rows) + ";\n\n")
 

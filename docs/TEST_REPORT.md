@@ -95,6 +95,26 @@ glyph.
 **13. The front door's title and subtitle ran together on one line** — two
 spans in a flex row with no column wrapper.
 
+**19. Dark mode hid the two dropdowns and the whole staff desk.** Reported by
+testers. Two separate causes. A `<select>` can be styled but the popup it opens
+is drawn by the operating system, and `<option>` inherits none of it — so the
+block list on the menu and the counter list on the staff desk rendered as white
+on white. `color-scheme: dark` on the select is what actually turns the native
+popup dark. Separately, the admin overrides declared `--paper` and `--card` on
+`.staff-shell` itself; because that is an inner element, its light values beat
+the dark ones inherited from `<body>` no matter how specific the body rule is,
+so every surface stayed light while the text went pale — measured at 1.04:1.
+
+Audited by walking every text node on both pages and computing the WCAG ratio
+against the first ancestor that actually paints a background. 9 failures before,
+0 after. Two more fell out of it: white on the men's orange was 2.84:1, and the
+staff "Ready" button kept its dark green label after the shell repainted every
+`.btn-mini` teal.
+
+**20. The thumbnails were a white box on a dark card.** The art was baked onto
+the app's cream. Re-cut as transparent PNGs, so the tile takes the card colour
+in either theme.
+
 **17. The cut-off test named an item by number and poisoned the pool.** It
 asserted on `menu_items WHERE id = 6`, which becomes a different dish every
 time the seed changes, and it did `SET nightit.now` through the pool — landing

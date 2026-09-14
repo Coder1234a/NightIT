@@ -560,7 +560,91 @@ body[data-role="staff"] .staff-shell .q-row.ready .q-no { background:#45b99d; co
 
 /* The thumbnail is now a real photo on the app's own paper colour, so it
    should sit flush rather than float on a white square. */
-.menu-item .thumb { object-fit:cover; background:var(--paper); }
+/* the art is transparent PNG, so the tile takes the card colour and there is
+   no white box glaring out of a dark card */
+.menu-item .thumb { object-fit:contain; background:transparent; }
 
 /* text on the tinted live-order panel, dark enough to pass AA on every tint */
 .live-strip .ls-copy span { color:var(--muted-on-accent); }
+
+/* ==================================================================
+   DARK MODE FIXES — reported by testers
+   Two separate faults, both invisible text on a near-identical
+   background.
+   ================================================================== */
+
+/* 1. The dropdowns. A <select> can be styled, but the popup list it opens
+      is drawn by the operating system and <option> inherits none of it.
+      On a dark page the select read as light text while the popup stayed
+      white, so the block list on the menu and the counter list on the
+      staff desk were white on white. color-scheme is what actually turns
+      the native popup dark; the explicit option colours cover the rest. */
+.select-block option, .theme-select option {
+  background:var(--card); color:var(--ink);
+}
+body.theme-dark .select-block, body.theme-dark .theme-select { color-scheme:dark; }
+@media (prefers-color-scheme:dark) {
+  body.theme-system .select-block, body.theme-system .theme-select { color-scheme:dark; }
+}
+
+/* 2. The staff desk had no dark palette at all. The admin overrides set
+      --paper and --card on .staff-shell itself — an inner element — so they
+      beat the dark values inherited from <body> no matter how specific the
+      body rule is, and every surface stayed light while the text went pale.
+      Same tokens, dark values, same elements. */
+body.theme-dark .staff-shell,
+body.theme-dark [data-role="staff"],
+body.theme-dark[data-role="staff"] {
+  --paper:#0f2224; --card:#193033; --line:#2f5a5d; --shadow:#081113;
+  --admin-ink:#eafffb; --admin-muted:#9dc2bd; --admin-card:#1b3437; --admin-line:#2f5a5d;
+  background-color:#0a1a1c; background-image:none;
+}
+body.theme-dark[data-role="staff"] .staff-shell {
+  background:linear-gradient(180deg,rgba(21,49,52,.75),rgba(12,32,34,.25));
+}
+body.theme-dark[data-role="staff"] .staff-shell .tabs { background:#17333a; }
+body.theme-dark[data-role="staff"] .staff-shell .tile {
+  background:linear-gradient(145deg,var(--admin-card),#16302f); box-shadow:0 5px 0 #0b2022;
+}
+body.theme-dark[data-role="staff"] .staff-shell .sticker { background:#1e5b54; color:#d7fff7; }
+body.theme-dark[data-role="staff"] .q-row, body.theme-dark[data-role="staff"] .queue-card,
+body.theme-dark[data-role="staff"] .manual-input, body.theme-dark[data-role="staff"] #reader {
+  background:var(--card); color:var(--ink);
+}
+@media (prefers-color-scheme:dark) {
+  body.theme-system .staff-shell,
+  body.theme-system [data-role="staff"],
+  body.theme-system[data-role="staff"] {
+    --paper:#0f2224; --card:#193033; --line:#2f5a5d; --shadow:#081113;
+    --admin-ink:#eafffb; --admin-muted:#9dc2bd; --admin-card:#1b3437; --admin-line:#2f5a5d;
+    background-color:#0a1a1c; background-image:none;
+  }
+  body.theme-system[data-role="staff"] .staff-shell {
+    background:linear-gradient(180deg,rgba(21,49,52,.75),rgba(12,32,34,.25));
+  }
+  body.theme-system[data-role="staff"] .staff-shell .tabs { background:#17333a; }
+  body.theme-system[data-role="staff"] .staff-shell .tile {
+    background:linear-gradient(145deg,var(--admin-card),#16302f); box-shadow:0 5px 0 #0b2022;
+  }
+  body.theme-system[data-role="staff"] .q-row, body.theme-system[data-role="staff"] .queue-card,
+  body.theme-system[data-role="staff"] .manual-input { background:var(--card); color:var(--ink); }
+}
+
+/* 3. Filled buttons only. White on the men's orange is 2.84:1, below AA —
+      but --pink is also the colour of prices and the +/- glyphs on a dark
+      card, where darkening it makes things worse. So the accent stays put
+      and only the button faces go deeper, with their text pinned white. */
+body[data-role="mens"] .btn-primary { background:linear-gradient(105deg,#c94f16,#e85a26); color:#fff; }
+body[data-role="mens"] .mode-btn.active,
+body[data-role="mens"] .btn-camera,
+body[data-role="mens"] .btn-redeem { background:#c94f16; color:#fff; }
+
+/* The same on the staff teal: white on #0f9b8e is 3.44:1. */
+body[data-role="staff"] .btn-redeem,
+body[data-role="staff"] .staff-shell .btn-redeem { background:#0a6d63; color:#fff; }
+
+/* "Ready" is a green button, but the staff shell repaints every .btn-mini
+   with the teal gradient and leaves the dark-green label behind on it. */
+body[data-role="staff"] .staff-shell .btn-mini.go {
+  background:linear-gradient(105deg,#128f5e,#22b573); color:#02251a;
+}
