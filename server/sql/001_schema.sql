@@ -103,3 +103,18 @@ END $$;
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
 ALTER TABLE orders ADD  CONSTRAINT orders_status_check
   CHECK (status IN ('pending','paid','ready','served','cancelled'));
+
+-- Carts that were already paid before this upgrade have no queue number, which
+-- would leave them unnumbered on the counter screen and invisible to the
+-- "how many are ahead of me" count. Give them one, continuing from whatever
+-- each counter has already issued.
+WITH base AS (
+  SELECT counter_id, COALESCE(MAX(queue_no), 0) AS m FROM orders GROUP BY counter_id
+), numbered AS (
+  SELECT o.id,
+         b.m + row_number() OVER (PARTITION BY o.counter_id ORDER BY o.created_at, o.id) AS n
+    FROM orders o JOIN base b ON b.counter_id = o.counter_id
+   WHERE o.queue_no IS NULL AND o.status IN ('paid','ready')
+)
+UPDATE orders o SET queue_no = numbered.n, paid_at = COALESCE(o.paid_at, o.created_at)
+  FROM numbered WHERE o.id = numbered.id;

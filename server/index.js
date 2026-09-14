@@ -15,6 +15,24 @@ function route(fn) {
   });
 }
 
+// The bare URL. Without this Express answers "Cannot GET /", which looks
+// broken to anyone who opens the address by hand.
+app.get("/", (_req, res) => {
+  res.json({
+    service: "nightit-api",
+    description: "Night mess ordering and pickup for VIT hostels. An add-on to MessIT.",
+    repo: "https://github.com/Coder1234a/NightIT",
+    health: "/health",
+    endpoints: [
+      "GET  /blocks", "GET  /menu?block_id=1", "POST /orders",
+      "POST /orders/:id/confirm", "GET  /orders/:id/status",
+      "POST /orders/:id/ready", "POST /orders/:id/serve", "POST /redeem",
+      "GET  /counter/:id/queue", "POST /stock", "POST /feedback",
+      "GET  /admin/summary",
+    ],
+  });
+});
+
 app.get("/health", route(async (_req, res) => {
   const r = await pool.query("SELECT 1 AS ok");
   res.json({ ok: r.rows[0].ok === 1, service: "nightit-api" });
@@ -217,7 +235,7 @@ app.get("/counter/:id/queue", route(async (req, res) => {
               WHERE oi.order_id = o.id) AS items
        FROM orders o
       WHERE o.counter_id = $1 AND o.status IN ('pending','paid','ready')
-      ORDER BY (o.status = 'pending') DESC, o.queue_no`, [Number(req.params.id)]);
+      ORDER BY (o.status = 'pending') DESC, o.queue_no NULLS LAST`, [Number(req.params.id)]);
   res.json(r.rows);
 }));
 
