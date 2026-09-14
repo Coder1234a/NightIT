@@ -67,3 +67,39 @@ CREATE TABLE IF NOT EXISTS feedback (
   message text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- ---------------------------------------------------------------------------
+-- Upgrade for a database created by an earlier version.
+--
+-- CREATE TABLE IF NOT EXISTS leaves an existing table exactly as it was, so a
+-- database that already held the single-item version of `orders` would keep
+-- the old columns and be missing the new ones. Everything below is written to
+-- be a no-op on a fresh database and a repair on an old one, and it is safe to
+-- run any number of times.
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS queue_no     int;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS prep_seconds int NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid_at      timestamptz;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS ready_at     timestamptz;
+ALTER TABLE orders ALTER COLUMN amount_paise SET DEFAULT 0;
+
+-- A cart's contents live in order_items now, so the single item column on the
+-- order itself is gone. Move anything an old row still holds across first.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+              WHERE table_name = 'orders' AND column_name = 'menu_item_id') THEN
+    INSERT INTO order_items (order_id, menu_item_id, qty, unit_price_paise)
+    SELECT o.id, o.menu_item_id, 1, o.amount_paise
+      FROM orders o
+     WHERE o.menu_item_id IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id);
+    ALTER TABLE orders DROP COLUMN menu_item_id;
+  END IF;
+END $$;
+
+-- 'ready' is a new status, so the old CHECK constraint would reject it.
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+ALTER TABLE orders ADD  CONSTRAINT orders_status_check
+  CHECK (status IN ('pending','paid','ready','served','cancelled'));

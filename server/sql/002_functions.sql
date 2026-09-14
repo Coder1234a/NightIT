@@ -1,3 +1,10 @@
+-- An earlier version of this file defined take_stock and return_stock with
+-- different argument types. CREATE OR REPLACE only replaces a function with the
+-- exact same signature, so without these drops the old ones survive as extra
+-- overloads and every call becomes ambiguous. No-ops on a fresh database.
+DROP FUNCTION IF EXISTS return_stock(int);
+DROP FUNCTION IF EXISTS take_stock(int);
+
 -- The night window crosses midnight, so plain time comparison is wrong:
 -- 23:00 is BEFORE 00:15 on the same night. These put every time on one scale.
 CREATE OR REPLACE FUNCTION night_min(t time)
