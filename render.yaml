@@ -9,7 +9,7 @@ services:
     runtime: node
     rootDir: server            # the code lives here; render.yaml does not
     plan: free
-    buildCommand: npm ci && npm run migrate
+    buildCommand: npm ci && npm run migrate -- --seed-if-empty
     startCommand: npm start
     healthCheckPath: /health
     envVars:
@@ -28,7 +28,8 @@ databases:
     databaseName: nightit
     plan: free
 
-# NOTE: buildCommand deliberately runs `npm run migrate` WITHOUT --seed.
-# The seed file truncates every table. If --seed were here, every single
-# deploy would erase the night's real orders. Seed once, by hand. The README
-# says how.
+# NOTE on --seed-if-empty: the seed file starts with TRUNCATE, so a plain
+# --seed here would erase the night's real orders on every deploy.
+# --seed-if-empty only seeds when the blocks table is empty, which is true
+# exactly once: on the very first deploy. Every deploy after that skips it.
+# Never change this to --seed.
