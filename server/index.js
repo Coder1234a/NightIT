@@ -1,4 +1,6 @@
 require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const { pool } = require("./db");
@@ -364,16 +366,26 @@ app.post("/admin/reset", route(async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await client.query("TRUNCATE order_items, orders RESTART IDENTITY CASCADE");
+    // ?reseed=1 rebuilds blocks, counters and menus from the seed file as well.
+    // That is what a deploy cannot do on its own once the database has rows.
+    let seeded = "kept";
+    if (req.query.reseed === "1") {
+      const sql = fs.readFileSync(
+        path.join(__dirname, "sql", "003_seed.sql"), "utf8");
+      await client.query(sql);
+      seeded = "rebuilt from 003_seed.sql";
+    } else {
+      await client.query("TRUNCATE order_items, orders RESTART IDENTITY CASCADE");
+      // Put stock back the way the seed file leaves it — same rule, so the two
+      // cannot drift apart as the menu grows.
+      await client.query(
+        `UPDATE stock SET remaining =
+           CASE WHEN menu_item_id % 11 = 0 THEN 0
+                ELSE 12 + (menu_item_id % 28) END`);
+    }
     if (req.query.feedback === "1") await client.query("TRUNCATE feedback RESTART IDENTITY");
-    // Restore the seeded stock levels without touching blocks or menus.
-    await client.query(`
-      UPDATE stock s SET remaining = v.n
-        FROM (VALUES (1,40),(2,0),(3,15),(4,25),(5,30),(6,12),(7,18),(8,50))
-             AS v(item, n)
-       WHERE s.menu_item_id = v.item`);
     await client.query("COMMIT");
-    res.json({ ok: true, cleared: "orders", stock: "restored",
+    res.json({ ok: true, cleared: "orders", stock: "restored", menu: seeded,
                feedback: req.query.feedback === "1" ? "cleared" : "kept" });
   } catch (e) {
     await client.query("ROLLBACK").catch(() => {});

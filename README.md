@@ -54,7 +54,7 @@ a block means inserting rows, not shipping a release.
 │   ├── db.js         pool, timezone and demo-clock wiring
 │   ├── scripts/      migrate.js, gen_seed.py
 │   ├── sql/          schema, functions, seed, indexes
-│   └── test/         61 tests
+│   └── test/         62 tests
 └── client/           React + Vite
     ├── public/items/ where the menu photos go — see the README in there
     ├── src/lib/      api, Razorpay loader, sound and notifications
@@ -133,7 +133,7 @@ about 30 seconds. **Open the URL once before any demo.**
 | POST | `/stock` | staff stock control |
 | POST/GET | `/feedback` | feedback and bug reports |
 | GET | `/admin/summary` | four figures plus demand in 10-minute slots |
-| POST | `/admin/reset` | clears the night's orders; 404 unless `RESET_TOKEN` is set |
+| POST | `/admin/reset` | clears the night's orders; `?reseed=1` also rebuilds the menu; 404 unless `RESET_TOKEN` is set |
 | GET | `/` | service index |
 
 ## How the pickup code works
@@ -185,6 +185,21 @@ so the staff dropdown stays unambiguous.
 `server/scripts/gen_seed.py` writes `sql/003_seed.sql`: 22 blocks, 22 counters
 and 220 menu rows drawn from a 43-item catalogue. Edit the generator, re-run
 it, and commit both. Hand-writing 220 rows is how typos get in.
+
+## Changing the menu on a live database
+
+`--seed-if-empty` in the build command seeds exactly once, on the very first
+deploy, and never again — otherwise every deploy would erase the night's real
+orders. The cost is that adding blocks or menu items to the seed file does
+*not* reach a database that already has rows. Two ways to push it through:
+
+- **Without a deploy** — `POST /admin/reset?reseed=1` with the `x-reset-token`
+  header. Rebuilds blocks, counters, menus and stock from `003_seed.sql`.
+- **With a deploy** — set `RESEED=1` on **nightit-api**, let it build, then
+  delete the variable again.
+
+Both erase every order, which is exactly what you want before a demo and
+exactly what you do not want during one.
 
 ## Menu photos
 

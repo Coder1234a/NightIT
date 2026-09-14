@@ -2,7 +2,7 @@
 
 Run 14–15 September 2026 against PostgreSQL 16.13 with `pgcrypto`, Node v22.
 
-**61 backend tests, 61 passing.** Plus a full three-role browser run of the
+**62 backend tests, 62 passing.** Plus a full three-role browser run of the
 merged frontend against a live backend.
 
 ## Coverage
@@ -94,6 +94,14 @@ glyph.
 
 **13. The front door's title and subtitle ran together on one line** — two
 spans in a flex row with no column wrapper.
+
+**14. New blocks never reached the live database.** The build command seeds
+only when the database is empty — correct, or every deploy would erase the
+night's orders — but that also meant a grown seed file could never land. Added
+`RESEED=1` as a one-deploy escape hatch and `POST /admin/reset?reseed=1` for
+the same thing without a deploy. The reset's stock restore was also still
+hardcoded to the original eight items; it now uses the same rule the seed file
+does, so the two cannot drift apart.
 
 **10. `node_modules` slipped past `.gitignore`.** The pattern ended in a slash,
 which only matches real directories — a symlinked `node_modules` was staged for

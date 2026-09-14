@@ -13,8 +13,15 @@ async function isEmpty() {
 // Runs every .sql file in sql/ in name order. Safe to run again and again.
 (async () => {
   const dir = path.join(__dirname, "..", "sql");
-  const always = process.argv.includes("--seed");
+  // RESEED is the escape hatch for a deploy whose database already has rows.
+  // --seed-if-empty deliberately skips the seed once blocks exist, so adding
+  // blocks or menu items to the seed file would otherwise never reach a live
+  // database. Set RESEED=1 in the dashboard, deploy, then delete the variable.
+  const reseed = /^(1|true|yes)$/i.test(process.env.RESEED || "");
+  const always = process.argv.includes("--seed") || reseed;
   const ifEmpty = process.argv.includes("--seed-if-empty");
+  if (reseed) console.log("RESEED is set — rebuilding blocks, menus and stock "
+                        + "from the seed file. Every order will be erased.");
 
   for (const f of fs.readdirSync(dir).sort()) {
     if (f.includes("seed")) {

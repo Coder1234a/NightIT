@@ -21,6 +21,10 @@ services:
         sync: false
       - key: RAZORPAY_KEY_SECRET
         sync: false
+      # Set to 1 for ONE deploy when the seed file has gained blocks or menu
+      # items, then delete it. It rebuilds the menu and erases every order.
+      - key: RESEED
+        sync: false
 
   - type: web
     name: nightit-client
@@ -46,3 +50,8 @@ databases:
 # --seed-if-empty only seeds when the blocks table is empty, which is true
 # exactly once. Never change it to --seed: the seed truncates every table, so
 # every deploy would erase the night's real orders.
+#
+# To push a changed seed file to a database that already has rows, set RESEED=1
+# on nightit-api, let it deploy, then delete the variable again. There is also
+# POST /admin/reset?reseed=1 with the x-reset-token header, which does the same
+# thing without a deploy.

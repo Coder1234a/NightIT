@@ -559,6 +559,26 @@ describe("feedback, bugs and the dashboard", () => {
 });
 
 describe("demo reset", () => {
+  test("reseed rebuilds the menu, a plain reset leaves it alone", async () => {
+    await fresh();
+    process.env.RESET_TOKEN = "letmein";
+    const before = (await api("GET", "/blocks")).body.length;
+    await pool.query("DELETE FROM blocks WHERE id = (SELECT max(id) FROM blocks)");
+    assert.equal((await api("GET", "/blocks")).body.length, before - 1);
+
+    // a plain reset clears orders only, so the missing block stays missing
+    await fetch(base + "/admin/reset",
+      { method: "POST", headers: { "x-reset-token": "letmein" } });
+    assert.equal((await api("GET", "/blocks")).body.length, before - 1);
+
+    // reseed puts the whole menu back
+    await fetch(base + "/admin/reset?reseed=1",
+      { method: "POST", headers: { "x-reset-token": "letmein" } });
+    assert.equal((await api("GET", "/blocks")).body.length, before);
+    delete process.env.RESET_TOKEN;
+    await discover();
+  });
+
   test("it is switched off unless RESET_TOKEN is set", async () => {
     delete process.env.RESET_TOKEN;
     assert.equal((await api("POST", "/admin/reset")).status, 404);
@@ -589,10 +609,14 @@ describe("demo reset", () => {
     assert.equal(Number(s2.collections_paise), 0);
     assert.equal((await api("GET", `/counter/${F.mens.counter_id}/queue`)).body.length, 0);
 
-    const maggi = (await api("GET", `/menu?block_id=${F.mens.id}`)).body.find(i => i.id === F.a.id);
-    assert.equal(Number(maggi.remaining), 40, "stock back to the seeded level");
-    const fries = (await api("GET", `/menu?block_id=${F.mens.id}`)).body.find(i => i.id === 2);
-    assert.equal(Number(fries.remaining), 0, "fries stay sold out, as seeded");
+    // the reset restores stock with the same rule 003_seed.sql uses, so the
+    // two cannot drift apart as the menu grows
+    const seeded = id => (id % 11 === 0 ? 0 : 12 + (id % 28));
+    const after = (await api("GET", `/menu?block_id=${F.mens.id}`)).body;
+    const item = after.find(i => i.id === F.a.id);
+    assert.equal(Number(item.remaining), seeded(F.a.id), "stock back to the seeded level");
+    const dry = after.find(i => i.id % 11 === 0);
+    if (dry) assert.equal(Number(dry.remaining), 0, "a seeded sold-out item stays sold out");
 
     assert.ok((await api("GET", "/feedback?kind=bug")).body.length >= 1,
       "feedback is kept unless asked for");
