@@ -29,8 +29,10 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:
+      # A plain value on purpose. fromService hands over a bare hostname with no
+      # scheme, and a blueprint that cannot resolve it fails silently.
       - key: VITE_API_URL
-        fromService: { name: nightit-api, type: web, property: hostport }
+        value: https://nightit-api.onrender.com
     routes:
       - type: rewrite
         source: /*
