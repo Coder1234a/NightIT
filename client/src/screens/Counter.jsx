@@ -38,7 +38,7 @@ export default function Counter() {
   async function redeem(code) {
     try {
       const r = await api.redeem(counterId, String(code).trim());
-      flash(true, "SERVED", `#${r.order.queue_no} · ${r.order.items}${r.order.parcel ? " · PARCEL" : ""}`);
+      flash(true, "SERVED", `#${r.order.queue_no} · ${r.order.items}${r.order.takeaway ? " · TAKE AWAY" : ""}`);
     } catch {
       flash(false, "ALREADY USED", "invalid, expired, or collected");
     }
@@ -107,8 +107,8 @@ export default function Counter() {
           <div className="q-copy">
             <div className="q-items">{o.items || "—"}</div>
             <div className="q-meta">
-              {o.reg_no} · {rupees(o.amount_paise)} · {o.mode}
-              {o.parcel ? " · parcel" : ""} · {o.status}
+              {o.reg_no} · {rupees(o.amount_paise + (o.tax_paise || 0))} · {o.mode}
+              {o.takeaway ? " · take away" : ""} · {o.status}
             </div>
           </div>
           {o.status === "pending" && o.mode === "cash" &&

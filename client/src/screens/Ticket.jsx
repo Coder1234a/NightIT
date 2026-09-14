@@ -52,7 +52,7 @@ export default function Ticket({ orderId, code, onBack }) {
       <h1>{ready ? "Ready" : "Waiting"}</h1>
       <p className="token-sub">
         {status?.block ? `${status.block} night counter` : "Loading your order"}
-        {status?.parcel ? " · parcel" : ""}
+        {status?.takeaway ? " · take away" : ""}
       </p>
 
       {code && (
@@ -71,12 +71,16 @@ export default function Ticket({ orderId, code, onBack }) {
       {status && (
         <div className={`queue-card ${ready ? "is-ready" : soon ? "is-soon" : ""}`}>
           <div className="queue-no">{status.queue_no ?? "--"}</div>
-          <p className="queue-label">your queue number</p>
+          <p className="queue-label">your token number</p>
 
           {ready ? (
             <p className="ready-shout">Collect it now</p>
           ) : (
             <>
+              <div className="queue-line">
+                <span>You are</span>
+                <b>{status.position === 1 ? "next" : `${status.position} in line`}</b>
+              </div>
               <div className="queue-line">
                 <span>People ahead of you</span><b>{status.ahead}</b>
               </div>
@@ -97,8 +101,11 @@ export default function Ticket({ orderId, code, onBack }) {
                   <span>{rupees(i.price_paise * i.qty)}</span>
                 </li>
               ))}
+              <li><span>Subtotal</span><span>{rupees(status.amount_paise)}</span></li>
+              <li><span>Tax</span><span>{rupees(status.tax_paise || 0)}</span></li>
               <li style={{ fontWeight: 700 }}>
-                <span>Total</span><span>{rupees(status.amount_paise)}</span>
+                <span>Paid</span>
+                <span>{rupees(status.total_paise ?? status.amount_paise)}</span>
               </li>
             </ul>
           )}

@@ -1,9 +1,9 @@
 # NightIT — test and debug report
 
-Run 14 September 2026 against PostgreSQL 16.13 with `pgcrypto`, Node v22.
+Run 14–15 September 2026 against PostgreSQL 16.13 with `pgcrypto`, Node v22.
 
-**49 backend tests, 49 passing.** Plus a full browser run of the merged
-frontend against a live backend.
+**56 backend tests, 56 passing.** Plus a full three-role browser run of the
+merged frontend against a live backend.
 
 ## Coverage
 
@@ -11,8 +11,8 @@ frontend against a live backend.
 |---|---|
 | health and configuration | 4 |
 | per-block configuration | 3 |
-| cart and total queue time | 7 |
-| queue number and your turn | 5 |
+| cart, tax and total queue time | 11 |
+| queue number and your turn | 7 |
 | food is ready | 5 |
 | pickup codes | 9 |
 | cash path | 1 |
@@ -25,7 +25,14 @@ Notable cases: two simultaneous carts fighting over the last portion (exactly
 one wins); two simultaneous scans of one code (served exactly once); a cart
 that hits a sold-out item leaving no stock stranded; the same code live at two
 different counters at once; a code refused after the cart was served at the
-counter instead of scanned.
+counter instead of scanned; a cart taking the *slowest* item's cooking time
+rather than the sum; tax added on top of the menu price rather than baked into
+it; a queue position that counts down as the people ahead are served; and a
+cart marked ready no longer lengthening anyone else's estimate.
+
+The suite discovers its own fixtures from `/blocks` and `/menu` instead of
+hardcoding seed IDs, so growing the seed from 2 blocks to 14 does not break a
+single test.
 
 ## Bugs found and fixed
 
@@ -55,6 +62,26 @@ drops first and lives in its own file that runs after the seed.
 and checking they differ passes whether or not the index exists. Replaced with
 three deterministic tests including a forced collision.
 
+**7. The cart's wait was the sum of its items.** A kitchen cooks a cart
+together, so two Maggi and a coffee is six minutes, not fourteen. Changed to
+the maximum item time plus the queue ahead. (LCM, which was suggested, is
+worse than either: LCM(6, 4) is 12 — longer than the slowest item.)
+
+**8. Ready food kept inflating everyone else's estimate.** The "how many are
+ahead of you" CTE counted carts already cooked and waiting to be collected.
+Now it counts only `status = 'paid'`.
+
+**9. Migrations only created, never upgraded.** A deploy onto an existing
+database died with `column "queue_no" does not exist`, and later with
+`function return_stock(unknown) is not unique` because `CREATE OR REPLACE`
+had left the old overload behind. `001_schema.sql` now carries guarded
+`ALTER … IF NOT EXISTS` blocks and a queue-number backfill; `002_functions.sql`
+drops each function before redefining it.
+
+**10. `node_modules` slipped past `.gitignore`.** The pattern ended in a slash,
+which only matches real directories — a symlinked `node_modules` was staged for
+commit. Slash removed.
+
 ## Mutation testing
 
 Deliberately breaking the code to prove the tests bite:
@@ -68,27 +95,41 @@ Deliberately breaking the code to prove the tests bite:
 | weaken redeem to allow re-serving | 2 tests fail |
 | drop the partial unique index | 1 test fails |
 | restore the naive midnight comparison | 15 tests fail |
+| make the cart wait additive again | 2 tests fail |
+| bake tax into the price instead of adding it | 3 tests fail |
+| count ready carts as still ahead of you | 1 test fails |
 
 ## Browser run
 
-Driven with a real Chromium against a live API:
+Driven with a real Chromium against a live API, all three roles:
 
 ```
-cart          ₹130 | whole cart ready in about 16 min
-ticket        code 137948 | queue number 1 | QR rendered
-              People ahead of you: 0 · Whole cart ready in: 16 min
-              Maggi x2 ₹80 · Cold coffee ₹50 · Total ₹130
-              "almost your turn" state active
-counter       queue row "Maggi x2, Cold coffee" · no 1
-after Ready   header "Ready" · "Collect it now" · green card, no reload
+door          Men's hostel · Ladies' hostel · Mess staff   body role ""
+/ladies       role "ladies" · 6 ladies' blocks, no men's blocks listed
+              registration number empty, placeholder "Your registration number"
+              modes  Eat in · Take away
+              menu   Cheese Maggi ₹55 +tax · thumbnail slot present
+items         7 min item + 15 min item in one cart
+cart bar      ₹173 | incl. ₹8 tax · ready in about 15 min      <- max, not 22
+ticket        /order/1 · code 899818 · token 1 · QR rendered
+              You are next · People ahead of you 0 · cart ready in 15 min
+              Cheese Maggi ₹55 · Paneer fried rice ₹110 · Subtotal ₹165
+              Tax ₹8 · Paid ₹173
+reload        /order/1 survives a hard reload, token still 1
+/staff        role "staff" · 14 counters · queue row shows the cart
+after Ready   student header "Ready" · "Collect it now", no reload
 scan 1        SERVED
 scan 2        ALREADY USED
-admin         1 order · 1 served · 0 waiting · ₹130 collected · chart drawn
-say           feedback submitted and confirmed
+dashboard     1 order · 1 served · 0 waiting · ₹165 collected · chart drawn
+resume        door shows "You are 1 in line · A-Block · token 1" for an
+              unserved cart; Open returns to /order/:id with the palette intact
 ```
 
-No JavaScript errors. The only console noise is Google Fonts being blocked in
-the test container and a favicon 404, both fixed or harmless.
+Each role paints its own palette from `body[data-role]`: warm orange for the
+men's blocks, violet for the ladies' blocks, teal for staff.
+
+No JavaScript errors. The only console noise is Google Fonts being blocked by
+the test container's proxy and the deliberate 409 from the second scan.
 
 ## Not done, deliberately
 

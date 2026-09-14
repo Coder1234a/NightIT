@@ -3,7 +3,7 @@ import { api } from "../lib/api";
 import { tone } from "../lib/notify";
 
 // Feedback and bug reporting, open to men's and ladies' hostel users alike.
-export default function Say({ regNo }) {
+export default function Say({ regNo, hostelType }) {
   const [blocks, setBlocks] = useState([]);
   const [blockId, setBlockId] = useState("");
   const [kind, setKind] = useState("feedback");
@@ -13,8 +13,14 @@ export default function Say({ regNo }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.blocks().then(bs => { setBlocks(bs); setBlockId(String(bs[0]?.id ?? "")); }).catch(() => {});
-  }, []);
+    api.blocks()
+      .then(all => {
+        const mine = hostelType ? all.filter(b => b.hostel_type === hostelType) : all;
+        setBlocks(mine);
+        setBlockId(String(mine[0]?.id ?? ""));
+      })
+      .catch(() => {});
+  }, [hostelType]);
 
   async function send() {
     if (!message.trim()) return;

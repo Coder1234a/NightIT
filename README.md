@@ -26,14 +26,17 @@ your room instead of from the corridor.
 
 | | |
 |---|---|
-| **Cart** | Order several things at once. The app shows what the *whole cart* will take, counting everyone already queued ahead of you — not just cooking time. |
-| **Queue number** | Handed out per counter when you pay, the same number the staff work through. |
+| **Cart** | Order several things at once. The kitchen cooks a cart together, so the wait is the **slowest** item on it plus everyone queued ahead — not the sum of the items. |
+| **Queue number** | Handed out per counter when you pay, the same number the staff work through. Your *position* counts down live as the carts ahead of you are served. |
 | **Almost your turn** | When one or none are ahead, the phone buzzes and says start walking. |
 | **Food is ready** | The counter taps Ready; the student's screen turns green with a sound and a notification. |
 | **Pay your way** | UPI through Razorpay, or cash at the counter. Both end in the same place. |
 | **Live menu** | Items grey out when stock hits zero, and close themselves at their cut-off time. |
-| **Parcel or eat in** | Chosen at order time. |
+| **Take away or eat in** | Chosen at order time. |
+| **Prices excluding tax** | Every price is labelled `+tax`; the tax is added once at checkout, so the cart total and the amount the payment gateway charges are the same number. |
+| **Three palettes** | Men's blocks, ladies' blocks and staff each get their own colour theme, so nobody has to wonder which side of the app they are on. |
 | **Feedback and bug reports** | Open to men's and ladies' hostel users alike. |
+| **Reopen your order** | Your ticket has its own URL. Close the tab and the front door offers a one-tap way back into it. |
 
 Every block is different — menus, prices, counters, closing times, what runs
 out. None of that is in the code. It is all rows in the database, so onboarding
@@ -47,14 +50,27 @@ a block means inserting rows, not shipping a release.
 ├── docs/
 │   └── TEST_REPORT.md
 ├── server/           Node + Express + PostgreSQL
-│   ├── index.js      15 endpoints
+│   ├── index.js      18 routes
 │   ├── db.js         pool, timezone and demo-clock wiring
 │   ├── sql/          schema, functions, seed, indexes
-│   └── test/         49 tests
+│   └── test/         56 tests
 └── client/           React + Vite
+    ├── public/items/ where the menu photos go — see the README in there
     ├── src/lib/      api, Razorpay loader, sound and notifications
     └── src/screens/  Order · Ticket · Counter · Admin · Say
 ```
+
+## Pages
+
+| Route | |
+|---|---|
+| `/` | the front door — pick men's hostel, ladies' hostel or staff |
+| `/mens`, `/ladies` | ordering and feedback, showing only that side's blocks |
+| `/order/:id` | one ticket: code, QR, queue number, live position |
+| `/staff` | counter queue, scanning and the dashboard |
+
+Real routes, not one static page — a ticket can be bookmarked, reloaded and
+shared between the student's own devices.
 
 ## Running it
 
@@ -89,6 +105,7 @@ Then set three variables on **nightit-api** in the Render dashboard:
 | Key | Value |
 |---|---|
 | `DEMO_TIME` | `23:00` while demoing; blank in real use |
+| `TAX_PERCENT` | `5` if unset |
 | `RAZORPAY_KEY_ID` | your `rzp_test_…` key |
 | `RAZORPAY_KEY_SECRET` | the matching secret |
 
@@ -103,7 +120,7 @@ about 30 seconds. **Open the URL once before any demo.**
 | GET | `/payments/config` | the public Razorpay key, never the secret |
 | GET | `/blocks` | blocks and their counters |
 | GET | `/menu?block_id=1` | stock, cut-off, state, live wait estimate |
-| POST | `/orders` | `{reg_no, items:[{menu_item_id, qty}], mode, parcel}` — one cart |
+| POST | `/orders` | `{reg_no, items:[{menu_item_id, qty}], mode, takeaway}` — one cart |
 | POST | `/orders/:id/confirm` | payment done → pickup code + queue number |
 | POST | `/orders/:id/cancel` | unpaid cart, portions go back |
 | GET | `/orders/:id/status` | status, queue number, how many ahead, wait, ready |
@@ -114,6 +131,8 @@ about 30 seconds. **Open the URL once before any demo.**
 | POST | `/stock` | staff stock control |
 | POST/GET | `/feedback` | feedback and bug reports |
 | GET | `/admin/summary` | four figures plus demand in 10-minute slots |
+| POST | `/admin/reset` | clears the night's orders; 404 unless `RESET_TOKEN` is set |
+| GET | `/` | service index |
 
 ## How the pickup code works
 
@@ -141,6 +160,14 @@ new time comparison.
 
 **Render runs on UTC.** The pool pins its connection to `Asia/Kolkata`, or the
 database would think 23:00 IST is 17:30 and close everything.
+
+## Menu photos
+
+`client/public/items/` is empty on purpose. Each menu row carries an
+`image_url` such as `/items/cheese-maggi.jpg`; drop a file of that name in and
+it appears. Anything missing falls back to a coloured tile, so the app never
+breaks over a photo. The README in that folder lists all 22 slugs and the size
+to shoot them at.
 
 ## Known limits
 

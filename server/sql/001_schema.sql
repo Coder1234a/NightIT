@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS orders (
   id bigserial PRIMARY KEY,
   reg_no text NOT NULL,
   counter_id int NOT NULL REFERENCES counters(id),
-  amount_paise int NOT NULL DEFAULT 0,
+  amount_paise int NOT NULL DEFAULT 0,   -- subtotal, before tax
+  tax_paise    int NOT NULL DEFAULT 0,
   mode text NOT NULL CHECK (mode IN ('upi','cash')),
   parcel boolean NOT NULL DEFAULT false,
   status text NOT NULL DEFAULT 'pending'
@@ -78,11 +79,25 @@ CREATE TABLE IF NOT EXISTS feedback (
 -- run any number of times.
 -- ---------------------------------------------------------------------------
 
+-- 'parcel' was renamed to 'takeaway'; do it before anything else touches it.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+              WHERE table_name='orders' AND column_name='parcel')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns
+              WHERE table_name='orders' AND column_name='takeaway') THEN
+    ALTER TABLE orders RENAME COLUMN parcel TO takeaway;
+  END IF;
+END $$;
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS takeaway     boolean NOT NULL DEFAULT false;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tax_paise    int NOT NULL DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS queue_no     int;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS prep_seconds int NOT NULL DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid_at      timestamptz;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS ready_at     timestamptz;
 ALTER TABLE orders ALTER COLUMN amount_paise SET DEFAULT 0;
+ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS image_url text;
 
 -- A cart's contents live in order_items now, so the single item column on the
 -- order itself is gone. Move anything an old row still holds across first.

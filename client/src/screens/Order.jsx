@@ -5,19 +5,26 @@ import { tone, askToNotify } from "../lib/notify";
 
 // The student's ordering screen: pick a block, build a cart, see what the whole
 // cart will take including everyone already queued, then pay by UPI or cash.
-export default function Order({ regNo, setRegNo, onOrdered }) {
+export default function Order({ hostelType, regNo, setRegNo, onOrdered }) {
   const [blocks, setBlocks] = useState([]);
   const [blockId, setBlockId] = useState(null);
   const [menu, setMenu] = useState([]);
   const [cart, setCart] = useState({});          // menu_item_id -> qty
-  const [parcel, setParcel] = useState(false);
+  const [takeaway, setTakeaway] = useState(false);
+  const [taxPct, setTaxPct] = useState(5);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.blocks().then(bs => { setBlocks(bs); setBlockId(bs[0]?.id ?? null); })
-       .catch(() => setError("Cannot reach the server. It may be waking up — try again in 30 seconds."));
-  }, []);
+    api.blocks()
+      .then(all => {
+        const mine = all.filter(b => b.hostel_type === hostelType);
+        setBlocks(mine);
+        setBlockId(mine[0]?.id ?? null);
+      })
+      .catch(() => setError("Cannot reach the server. It may be waking up — try again in 30 seconds."));
+    api.paymentConfig().then(c => setTaxPct(c.tax_percent ?? 5)).catch(() => {});
+  }, [hostelType]);
 
   useEffect(() => {
     if (!blockId) return;
@@ -31,8 +38,11 @@ export default function Order({ regNo, setRegNo, onOrdered }) {
   const lines = Object.entries(cart)
     .map(([id, qty]) => ({ item: menu.find(m => m.id === Number(id)), qty }))
     .filter(l => l.item);
-  const total = lines.reduce((s, l) => s + l.item.price_paise * l.qty, 0);
-  const cook = lines.reduce((s, l) => s + l.item.prep_minutes * 60 * l.qty, 0);
+  const subtotal = lines.reduce((s, l) => s + l.item.price_paise * l.qty, 0);
+  const tax = Math.round(subtotal * taxPct / 100);
+  // The kitchen cooks a cart together, so the wait is its slowest item, not the
+  // sum of them. Then add the people already queued at this counter.
+  const cook = lines.reduce((s, l) => Math.max(s, l.item.prep_minutes * 60), 0);
   const ahead = menu[0] ? Number(menu[0].queue_ahead) : 0;
   const service = menu[0] ? Number(menu[0].avg_service_seconds) : 90;
   const cartWait = cook + ahead * service;
@@ -58,7 +68,7 @@ export default function Order({ regNo, setRegNo, onOrdered }) {
       const order = await api.createOrder({
         reg_no: regNo.trim() || "GUEST",
         items: lines.map(l => ({ menu_item_id: l.item.id, qty: l.qty })),
-        mode, parcel,
+        mode, takeaway,
       });
 
       if (mode === "cash") {
@@ -78,7 +88,7 @@ export default function Order({ regNo, setRegNo, onOrdered }) {
 
       const rzp = new window.Razorpay({
         key: cfg.key_id,
-        amount: order.amount_paise,
+        amount: order.total_paise,
         currency: "INR",
         name: "NightIT",
         description: lines.map(l => `${l.item.name} x${l.qty}`).join(", "),
@@ -122,12 +132,14 @@ export default function Order({ regNo, setRegNo, onOrdered }) {
       </div>
 
       <p className="section-label">Registration number</p>
-      <input className="field" value={regNo} onChange={e => setRegNo(e.target.value)}
-             placeholder="26BDE0124" />
+      <input className="field" value={regNo} onChange={e => setRegNo(e.target.value.toUpperCase())}
+             placeholder="Your registration number" autoComplete="off" spellCheck="false" />
 
       <div className="mode-toggle">
-        <button className={`mode-btn ${!parcel ? "active" : ""}`} onClick={() => setParcel(false)}>Eat in</button>
-        <button className={`mode-btn ${parcel ? "active" : ""}`} onClick={() => setParcel(true)}>Parcel</button>
+        <button className={`mode-btn ${!takeaway ? "active" : ""}`}
+                onClick={() => setTakeaway(false)}>Eat in</button>
+        <button className={`mode-btn ${takeaway ? "active" : ""}`}
+                onClick={() => setTakeaway(true)}>Take away</button>
       </div>
 
       {error && <p className="note bad">{error}</p>}
@@ -136,10 +148,17 @@ export default function Order({ regNo, setRegNo, onOrdered }) {
       <ul className="menu-list">
         {menu.map(i => (
           <li key={i.id}>
-            <div className="menu-item" style={{ cursor: "default" }}>
+            <div className={`menu-item ${i.image_url ? "has-thumb" : ""}`} style={{ cursor: "default" }}>
+              {i.image_url && (
+                <img className="thumb" src={i.image_url} alt="" loading="lazy"
+                     onError={e => { e.currentTarget.style.visibility = "hidden"; }} />
+              )}
               <div className="item-copy">
                 <div className="item-name">
-                  {i.name}<span className="item-price">{rupees(i.price_paise)}</span>
+                  {i.name}
+                  <span className="item-price">
+                    {rupees(i.price_paise)}<span className="excl">+tax</span>
+                  </span>
                 </div>
                 <div className={`item-meta ${i.available ? "" : "closed"}`}>
                   {i.available
@@ -161,10 +180,10 @@ export default function Order({ regNo, setRegNo, onOrdered }) {
       {lines.length > 0 && (
         <div className="cart-bar">
           <div className="cart-copy">
-            <div className="cart-total">{rupees(total)}</div>
+            <div className="cart-total">{rupees(subtotal + tax)}</div>
             <div className="cart-wait">
-              whole cart ready in about {humanWait(cartWait)}
-              {ahead > 0 && ` · ${ahead} ahead of you`}
+              incl. {rupees(tax)} tax · ready in about {humanWait(cartWait)}
+              {ahead > 0 && ` · ${ahead} ahead`}
             </div>
           </div>
           <button className="btn-primary" disabled={busy} onClick={() => checkout("upi")}>

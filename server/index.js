@@ -3,6 +3,11 @@ const express = require("express");
 const cors = require("cors");
 const { pool } = require("./db");
 
+// GST on prepared food. Menu prices are shown excluding tax and it is added at
+// checkout, which is how the mess already prices its board.
+const TAX_PERCENT = Number(process.env.TAX_PERCENT || 5);
+const taxOn = subtotal => Math.round(subtotal * TAX_PERCENT / 100);
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -42,7 +47,7 @@ app.get("/health", route(async (_req, res) => {
 app.get("/payments/config", (_req, res) => {
   const key = process.env.RAZORPAY_KEY_ID || null;
   res.json({ key_id: key, mode: (key || "").startsWith("rzp_test_") ? "test" : "live",
-             configured: Boolean(key) });
+             configured: Boolean(key), tax_percent: TAX_PERCENT });
 });
 
 app.get("/blocks", route(async (_req, res) => {
@@ -60,8 +65,8 @@ app.get("/menu", route(async (req, res) => {
   const r = await pool.query(
     `WITH ahead AS (
        SELECT counter_id, COUNT(*)::int AS n FROM orders
-        WHERE status IN ('paid','ready') GROUP BY counter_id)
-     SELECT m.id, m.name, m.price_paise, m.prep_minutes, m.cutoff_at,
+        WHERE status = 'paid' GROUP BY counter_id)
+     SELECT m.id, m.name, m.price_paise, m.prep_minutes, m.cutoff_at, m.image_url,
             COALESCE(s.remaining,0) AS remaining, c.id AS counter_id,
             c.avg_service_seconds, b.closes_at,
             COALESCE(a.n,0) AS queue_ahead,
@@ -88,7 +93,7 @@ app.get("/menu", route(async (req, res) => {
 // so two people cannot both claim the last plate and a half-filled cart never
 // leaves stock stranded.
 app.post("/orders", route(async (req, res) => {
-  const { reg_no, items, mode = "upi", parcel = false } = req.body || {};
+  const { reg_no, items, mode = "upi", takeaway = false } = req.body || {};
   if (!reg_no || !Array.isArray(items) || items.length === 0)
     return res.status(400).json({ error: "reg_no_and_items_required" });
   if (!["upi", "cash"].includes(mode)) return res.status(400).json({ error: "bad_mode" });
@@ -121,14 +126,17 @@ app.post("/orders", route(async (req, res) => {
       if (!took.rows[0].ok) throw Object.assign(new Error("sold_out"), { http: 409 });
 
       total += row.price_paise * qty;
-      prep  += row.prep_minutes * 60 * qty;
+      // The kitchen cooks a cart together, so the wait is the slowest item on
+      // it, not the sum of them. Two Maggi and a coffee is six minutes.
+      prep = Math.max(prep, row.prep_minutes * 60);
       lines.push({ id, qty, price: row.price_paise });
     }
 
+    const tax = taxOn(total);
     const o = await client.query(
-      `INSERT INTO orders (reg_no, counter_id, amount_paise, mode, parcel, prep_seconds)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-      [reg_no, counterId, total, mode, !!parcel, prep]);
+      `INSERT INTO orders (reg_no, counter_id, amount_paise, tax_paise, mode, takeaway, prep_seconds)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+      [reg_no, counterId, total, tax, mode, !!takeaway, prep]);
     const orderId = Number(o.rows[0].id);
 
     for (const l of lines) {
@@ -138,8 +146,11 @@ app.post("/orders", route(async (req, res) => {
     }
 
     await client.query("COMMIT");
-    res.status(201).json({ order_id: orderId, counter_id: counterId, amount_paise: total,
-                           prep_seconds: prep, mode, status: "pending" });
+    res.status(201).json({
+      order_id: orderId, counter_id: counterId, mode, status: "pending",
+      subtotal_paise: total, tax_paise: tax, total_paise: total + tax,
+      tax_percent: TAX_PERCENT, prep_seconds: prep,
+    });
   } catch (e) {
     await client.query("ROLLBACK").catch(() => {});
     if (e.http) return res.status(e.http).json({ error: e.message });
@@ -177,7 +188,7 @@ app.post("/orders/:id/cancel", route(async (req, res) => {
 app.get("/orders/:id/status", route(async (req, res) => {
   const id = Number(req.params.id);
   const r = await pool.query(
-    `SELECT o.id, o.status, o.queue_no, o.parcel, o.amount_paise, o.prep_seconds,
+    `SELECT o.id, o.status, o.queue_no, o.takeaway, o.amount_paise, o.tax_paise, o.prep_seconds,
             o.expires_at, o.ready_at, c.avg_service_seconds, b.name AS block,
             (SELECT COUNT(*)::int FROM orders x
               WHERE x.counter_id = o.counter_id AND x.status = 'paid'
@@ -196,7 +207,11 @@ app.get("/orders/:id/status", route(async (req, res) => {
     ? 0 : ahead * o.avg_service_seconds + o.prep_seconds;
   res.json({
     order_id: Number(o.id), status: o.status, queue_no: o.queue_no, block: o.block,
-    items: o.items, amount_paise: o.amount_paise, parcel: o.parcel,
+    // queue_no is the ticket you were handed; position is where you are in the
+    // line right now, and it counts down as the people ahead are served.
+    position: o.status === "paid" ? o.ahead + 1 : 0,
+    items: o.items, amount_paise: o.amount_paise, tax_paise: o.tax_paise,
+    total_paise: o.amount_paise + o.tax_paise, takeaway: o.takeaway,
     ahead, eta_seconds: eta,
     ready: o.status === "ready", served: o.status === "served",
     almost_your_turn: o.status === "paid" && ahead <= 1,
@@ -229,7 +244,8 @@ app.post("/orders/:id/serve", route(async (req, res) => {
 // Everything the counter screen shows: who is waiting, in order.
 app.get("/counter/:id/queue", route(async (req, res) => {
   const r = await pool.query(
-    `SELECT o.id, o.queue_no, o.reg_no, o.status, o.mode, o.parcel, o.amount_paise,
+    `SELECT o.id, o.queue_no, o.reg_no, o.status, o.mode, o.takeaway,
+            o.amount_paise, o.tax_paise,
             (SELECT string_agg(m.name || CASE WHEN oi.qty > 1 THEN ' x' || oi.qty ELSE '' END, ', ')
                FROM order_items oi JOIN menu_items m ON m.id = oi.menu_item_id
               WHERE oi.order_id = o.id) AS items
@@ -250,7 +266,7 @@ app.post("/redeem", route(async (req, res) => {
   if (!id) return res.status(409).json({ served: false, reason: "invalid_expired_or_already_used" });
 
   const d = await pool.query(
-    `SELECT o.id, o.reg_no, o.parcel, o.queue_no,
+    `SELECT o.id, o.reg_no, o.takeaway, o.queue_no,
             (SELECT string_agg(m.name || CASE WHEN oi.qty > 1 THEN ' x' || oi.qty ELSE '' END, ', ')
                FROM order_items oi JOIN menu_items m ON m.id = oi.menu_item_id
               WHERE oi.order_id = o.id) AS items
@@ -310,6 +326,37 @@ app.get("/admin/summary", route(async (req, res) => {
       WHERE ($1::text IS NULL OR b.hostel_type = $1)
       GROUP BY 1 ORDER BY 1`, args);
   res.json({ ...totals.rows[0], demand: buckets.rows });
+}));
+
+// Wipes tonight's orders and puts every portion back on the shelf, so a demo
+// starts from a clean queue. Disabled unless RESET_TOKEN is set, and the
+// caller must send that exact token, so nobody can empty the mess by accident.
+app.post("/admin/reset", route(async (req, res) => {
+  const expected = process.env.RESET_TOKEN;
+  if (!expected) return res.status(404).json({ error: "reset_disabled" });
+  if (req.get("x-reset-token") !== expected)
+    return res.status(403).json({ error: "bad_token" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("TRUNCATE order_items, orders RESTART IDENTITY CASCADE");
+    if (req.query.feedback === "1") await client.query("TRUNCATE feedback RESTART IDENTITY");
+    // Restore the seeded stock levels without touching blocks or menus.
+    await client.query(`
+      UPDATE stock s SET remaining = v.n
+        FROM (VALUES (1,40),(2,0),(3,15),(4,25),(5,30),(6,12),(7,18),(8,50))
+             AS v(item, n)
+       WHERE s.menu_item_id = v.item`);
+    await client.query("COMMIT");
+    res.json({ ok: true, cleared: "orders", stock: "restored",
+               feedback: req.query.feedback === "1" ? "cleared" : "kept" });
+  } catch (e) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw e;
+  } finally {
+    client.release();
+  }
 }));
 
 const port = process.env.PORT || 3000;

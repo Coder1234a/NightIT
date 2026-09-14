@@ -113,3 +113,65 @@ body.theme-dark .note.bad { background:#3d1720; color:#ff9fae; }
 .api-pill i { width:7px; height:7px; border-radius:50%; background:var(--muted); font-style:normal; }
 .api-pill.up i { background:var(--green); } .api-pill.down i { background:var(--red); }
 .empty { padding:26px 14px; color:var(--muted); font-size:13px; text-align:center; }
+
+/* ===========================================================================
+   Role themes. The palette changes with who is using the app: warm coral for
+   men's blocks, violet for ladies' blocks, and a cool slate for staff so the
+   admin screens never look like the student ones.
+   =========================================================================== */
+body[data-role="mens"]   { --pink:#ff6b35; --orange:#ff4f87; --lilac:#ffb26b; --accent-soft:#fff0e6; }
+body[data-role="ladies"] { --pink:#a45cff; --orange:#ff5fa8; --lilac:#c9b6ff; --accent-soft:#f4ecff; }
+body[data-role="staff"]  { --pink:#0f9b8e; --orange:#1e7a9c; --lilac:#8fd8d0; --accent-soft:#e6f6f4; }
+body[data-role="mens"]   .mode-btn.active,
+body[data-role="mens"]   .btn-primary { box-shadow:0 4px 0 #c94f16; }
+body[data-role="ladies"] .mode-btn.active,
+body[data-role="ladies"] .btn-primary { box-shadow:0 4px 0 #7a34cc; }
+body[data-role="staff"]  .mode-btn.active,
+body[data-role="staff"]  .btn-primary { box-shadow:0 4px 0 #0a6d63; }
+body[data-role="staff"] .app::before,
+body[data-role="staff"] .scanner-screen::before { background:linear-gradient(135deg,#8fd8d0,#1e7a9c); }
+body[data-role="ladies"] .app::before { background:linear-gradient(135deg,#c9b6ff,#ff9fd0); }
+
+/* ---- role picker on the front door ---- */
+.door { display:flex; flex-direction:column; gap:14px; margin-top:8px; }
+.door-btn { display:flex; align-items:center; gap:15px; padding:19px 18px; border:1px solid var(--line);
+  border-radius:26px 26px 8px 26px; background:var(--card); color:var(--ink); text-align:left;
+  cursor:pointer; box-shadow:0 6px 0 var(--shadow); transition:transform .2s, box-shadow .2s; }
+.door-btn:hover { transform:translateY(-4px) rotate(-.5deg); box-shadow:0 10px 0 var(--shadow); }
+.door-btn .blob { flex:0 0 48px; height:48px; border-radius:17px 17px 6px 17px; }
+.door-btn .t { font-size:17px; font-weight:700; letter-spacing:-.02em; }
+.door-btn .s { margin-top:3px; color:var(--muted); font-size:12px; }
+.blob.m { background:linear-gradient(135deg,#ffb26b,#ff6b35); }
+.blob.l { background:linear-gradient(135deg,#c9b6ff,#a45cff); }
+.blob.s { background:linear-gradient(135deg,#8fd8d0,#0f9b8e); }
+
+/* ---- item thumbnails ---- */
+.menu-item .thumb { flex:0 0 52px; width:52px; height:52px; border-radius:17px 17px 6px 17px;
+  object-fit:cover; background:linear-gradient(135deg,var(--yellow),var(--orange)); }
+.menu-item.has-thumb::before { display:none; }
+
+/* ---- price and tax ---- */
+.excl { margin-left:6px; color:var(--muted); font-family:'DM Mono',monospace; font-size:9px;
+  letter-spacing:.04em; text-transform:uppercase; }
+.totals { margin:0 0 12px; padding:0; list-style:none; font-size:13px; }
+.totals li { display:flex; justify-content:space-between; padding:4px 0; color:var(--muted); }
+.totals li.grand { padding-top:9px; border-top:1px dashed var(--line); color:var(--ink);
+  font-size:16px; font-weight:700; }
+
+/* ---- resume banner ---- */
+.resume { display:flex; align-items:center; gap:12px; margin-bottom:18px; padding:13px 15px;
+  border:1px solid var(--pink); border-radius:20px 20px 6px 20px; background:var(--accent-soft); }
+.resume .r-copy { flex:1; min-width:0; font-size:13px; }
+.resume .r-copy b { display:block; font-size:14px; }
+.resume button { padding:9px 14px; border:0; border-radius:12px; background:var(--pink);
+  color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
+
+/* ---- back link ---- */
+.crumb { display:inline-block; margin-bottom:14px; padding:7px 13px; border:1px solid var(--line);
+  border-radius:999px; background:var(--card); color:var(--muted); font-size:12px;
+  text-decoration:none; }
+.crumb:hover { color:var(--ink); border-color:var(--ink); }
+
+/* ---- staff shell is wider than a phone ---- */
+.staff-shell { max-width:760px; }
+@media (min-width:720px) { .staff-shell .tiles { grid-template-columns:repeat(4,1fr); } }
