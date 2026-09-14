@@ -36,7 +36,7 @@ your room instead of from the corridor.
 | **Prices excluding tax** | Every price is labelled `+tax`; the tax is added once at checkout, so the cart total and the amount the payment gateway charges are the same number. |
 | **Three palettes** | Men's blocks, ladies' blocks and staff each get their own colour theme, so nobody has to wonder which side of the app they are on. |
 | **Feedback and bug reports** | Open to men's and ladies' hostel users alike. |
-| **Reopen your order** | Your ticket has its own URL. Close the tab and the front door offers a one-tap way back into it. |
+| **Reopen your order** | A live strip follows you across every student page. Close the tab, clear the browser, borrow a friend's phone — type your registration number and the server hands the order back. |
 
 Every block is different — menus, prices, counters, closing times, what runs
 out. None of that is in the code. It is all rows in the database, so onboarding
@@ -50,14 +50,15 @@ a block means inserting rows, not shipping a release.
 ├── docs/
 │   └── TEST_REPORT.md
 ├── server/           Node + Express + PostgreSQL
-│   ├── index.js      18 routes
+│   ├── index.js      19 routes
 │   ├── db.js         pool, timezone and demo-clock wiring
+│   ├── scripts/      migrate.js, gen_seed.py
 │   ├── sql/          schema, functions, seed, indexes
-│   └── test/         56 tests
+│   └── test/         61 tests
 └── client/           React + Vite
     ├── public/items/ where the menu photos go — see the README in there
     ├── src/lib/      api, Razorpay loader, sound and notifications
-    └── src/screens/  Order · Ticket · Counter · Admin · Say
+    └── src/screens/  Order · Ticket · Counter · Admin · Say · LiveOrder
 ```
 
 ## Pages
@@ -124,6 +125,7 @@ about 30 seconds. **Open the URL once before any demo.**
 | POST | `/orders/:id/confirm` | payment done → pickup code + queue number |
 | POST | `/orders/:id/cancel` | unpaid cart, portions go back |
 | GET | `/orders/:id/status` | status, queue number, how many ahead, wait, ready |
+| GET | `/orders/active?reg_no=…` | every live cart under that registration number |
 | POST | `/orders/:id/ready` | counter: food is ready |
 | POST | `/orders/:id/serve` | counter: handed over (used for cash) |
 | POST | `/redeem` | `{counter_id, code}` — serves once, refuses after |
@@ -160,6 +162,29 @@ new time comparison.
 
 **Render runs on UTC.** The pool pins its connection to `Asia/Kolkata`, or the
 database would think 23:00 IST is 17:30 and close everything.
+
+## Finding your order again
+
+The obvious place to keep "which order am I waiting for" is the browser, and
+that is exactly what breaks: a closed tab, a cleared cache or a borrowed phone
+and the order is gone, even though the food is still being cooked.
+
+So the browser is only the fast path. `GET /orders/active?reg_no=…` asks the
+server, which is the only thing that actually knows, and the student gets their
+queue number back on any device. The strip that shows it is on every student
+page, not just the front door.
+
+## The blocks
+
+Men's: A B C D K L M N P Q R T. Ladies': A B C D E F G H J S.
+
+Both hostels have an A block, so `blocks.name` is not unique on its own — the
+table is keyed on `(name, hostel_type)`, and the counter name carries the side
+so the staff dropdown stays unambiguous.
+
+`server/scripts/gen_seed.py` writes `sql/003_seed.sql`: 22 blocks, 22 counters
+and 220 menu rows drawn from a 43-item catalogue. Edit the generator, re-run
+it, and commit both. Hand-writing 220 rows is how typos get in.
 
 ## Menu photos
 

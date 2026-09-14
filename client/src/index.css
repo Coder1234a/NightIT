@@ -158,13 +158,6 @@ body[data-role="ladies"] .app::before { background:linear-gradient(135deg,#c9b6f
 .totals li.grand { padding-top:9px; border-top:1px dashed var(--line); color:var(--ink);
   font-size:16px; font-weight:700; }
 
-/* ---- resume banner ---- */
-.resume { display:flex; align-items:center; gap:12px; margin-bottom:18px; padding:13px 15px;
-  border:1px solid var(--pink); border-radius:20px 20px 6px 20px; background:var(--accent-soft); }
-.resume .r-copy { flex:1; min-width:0; font-size:13px; }
-.resume .r-copy b { display:block; font-size:14px; }
-.resume button { padding:9px 14px; border:0; border-radius:12px; background:var(--pink);
-  color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
 
 /* ---- back link ---- */
 .crumb { display:inline-block; margin-bottom:14px; padding:7px 13px; border:1px solid var(--line);
@@ -175,3 +168,137 @@ body[data-role="ladies"] .app::before { background:linear-gradient(135deg,#c9b6f
 /* ---- staff shell is wider than a phone ---- */
 .staff-shell { max-width:760px; }
 @media (min-width:720px) { .staff-shell .tiles { grid-template-columns:repeat(4,1fr); } }
+
+
+/* ==================================================================
+   LIVE ORDER STRIP
+   Follows the student around the app so an order is always one tap
+   away, and offers a lookup by registration number when this phone
+   has no memory of one.
+   ================================================================== */
+.live-stack { display:flex; flex-direction:column; gap:12px; margin-bottom:26px; }
+.live-strip { display:flex; align-items:center; gap:14px; width:100%; padding:15px 17px;
+  border:1px solid var(--pink); border-radius:22px 22px 7px 22px;
+  background:var(--accent-soft); color:var(--ink); text-align:left; cursor:pointer;
+  box-shadow:0 5px 0 var(--shadow); transition:transform .18s, box-shadow .18s; }
+.live-strip:hover { transform:translateY(-3px); box-shadow:0 8px 0 var(--shadow); }
+.live-strip.hot { border-color:var(--green); background:rgba(22,185,121,.12); }
+.ls-dot { flex:0 0 10px; width:10px; height:10px; border-radius:50%; background:var(--pink);
+  box-shadow:0 0 0 4px rgba(255,79,135,.18); animation:blip 1.8s ease-in-out infinite; }
+.live-strip.hot .ls-dot { background:var(--green); box-shadow:0 0 0 4px rgba(22,185,121,.2); }
+.ls-copy { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.ls-copy b { font-size:15px; letter-spacing:-.02em; }
+.ls-copy span { color:var(--muted); font-family:'DM Mono',monospace; font-size:11px;
+  letter-spacing:.04em; }
+.ls-go { color:var(--pink); font-size:12px; font-weight:700; white-space:nowrap; }
+@keyframes blip { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+.live-find { margin-bottom:24px; }
+.link-quiet { padding:0; border:0; background:none; color:var(--muted); font-family:inherit;
+  font-size:13px; text-decoration:underline; text-underline-offset:4px; cursor:pointer; }
+.link-quiet:hover { color:var(--pink); }
+.live-find .field { margin-bottom:10px; }
+.btn-secondary { padding:11px 18px; border:1px solid var(--line); border-radius:14px;
+  background:var(--card); color:var(--ink); font-size:13px; font-weight:700; cursor:pointer; }
+.btn-secondary:hover { border-color:var(--pink); color:var(--pink); }
+
+/* ==================================================================
+   TYPOGRAPHY AND RHYTHM
+   The first draft was set tight, which reads as cramped on a phone at
+   midnight. Everything below loosens the line height, opens the gaps
+   between sections, and gives every tap target real room. Nothing
+   here changes a colour or a shape.
+   ================================================================== */
+body { line-height:1.5; -webkit-font-smoothing:antialiased; }
+.app { padding:26px 20px 76px; }
+
+/* headings breathe, and stop crashing into the line beneath them */
+.app h1 { line-height:.95; letter-spacing:-.055em; }
+.eyebrow { margin-bottom:10px; letter-spacing:.18em; }
+.hero-note { max-width:260px; margin-top:18px; font-size:14px; line-height:1.6; }
+
+/* a section label owns the space above itself, so blocks separate cleanly */
+.section-label { margin:30px 0 12px; letter-spacing:.14em; }
+.section-label:first-child { margin-top:0; }
+
+/* list rows: more air inside the card and more between the cards */
+.menu-list { gap:14px; }
+.menu-item { gap:15px; padding:16px 17px; }
+.item-name { font-size:16px; line-height:1.35; letter-spacing:-.01em; }
+.item-price { margin-left:10px; font-size:13px; }
+.item-meta { margin-top:7px; font-size:10px; line-height:1.5; letter-spacing:.05em; }
+
+/* controls */
+.tabs { gap:6px; margin-bottom:26px; padding:6px; }
+.tab { padding:13px 8px; }
+.mode-toggle { margin-bottom:8px; }
+.mode-btn { padding:14px; }
+.field { padding:15px 16px; margin-bottom:14px; font-size:15px; line-height:1.4; }
+.field::placeholder { color:var(--muted); opacity:.8; }
+.qty { gap:11px; }
+.qty button { width:32px; height:32px; font-size:17px; }
+
+/* the cart bar and the ticket */
+.cart-bar { gap:14px; margin-top:26px; padding:17px 19px; }
+.cart-bar .cart-wait { margin-top:5px; line-height:1.5; }
+.queue-card { margin:26px 0 10px; padding:24px 20px; }
+.queue-label { margin:4px 0 16px; letter-spacing:.16em; }
+.token-code { margin:30px 0 9px; }
+.token-expiry { margin-bottom:32px; line-height:1.5; }
+.note { line-height:1.6; }
+
+/* the front door */
+.door { gap:14px; }
+.door-btn { padding:18px 17px; gap:16px; }
+.door-btn .t { font-size:17px; line-height:1.3; }
+.door-btn .s { margin-top:5px; line-height:1.5; }
+
+/* a phone in the dark deserves a slightly larger base size */
+@media (max-width:420px) {
+  .app { padding:24px 18px 76px; }
+  .app h1 { font-size:44px; }
+  .item-name { font-size:15.5px; }
+}
+
+/* ==================================================================
+   MENU ROW
+   Three columns — photo, name and meta, then price above the counter.
+   The price used to float inside the name and collide with it on any
+   item whose name wrapped.
+   ================================================================== */
+.menu-item { align-items:center; gap:14px; }
+.menu-item .item-copy { flex:1; min-width:0; }
+.menu-item .item-name { font-size:16px; font-weight:700; line-height:1.3; }
+.menu-item .item-meta { margin-top:6px; }
+
+.item-right { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:9px; }
+.item-right .item-price { float:none; display:flex; align-items:baseline; gap:5px;
+  color:var(--pink); font-family:'DM Mono',monospace; font-size:15px; font-weight:700;
+  white-space:nowrap; }
+.item-right .excl { margin-left:0; }
+
+/* a missing photo becomes a coloured tile, never a hole */
+.menu-item .thumb { flex:0 0 54px; width:54px; height:54px; }
+.menu-item .thumb.fallback,
+.menu-item .thumb[src=""] { background:linear-gradient(135deg,var(--yellow),var(--orange));
+  box-shadow:inset 0 -5px 0 rgba(255,255,255,.22); }
+li:nth-child(5n+2) .thumb.fallback { background:linear-gradient(135deg,var(--lilac),#7668ed); }
+li:nth-child(5n+3) .thumb.fallback { background:linear-gradient(135deg,var(--mint),var(--green)); }
+li:nth-child(5n+4) .thumb.fallback { background:linear-gradient(135deg,#ffc2d4,var(--pink)); }
+li:nth-child(5n)   .thumb.fallback { background:linear-gradient(135deg,var(--blue),#4a9fe0); }
+
+/* a sold-out row should look spent, not merely annotated */
+.menu-item.off { opacity:.55; box-shadow:0 3px 0 var(--shadow); }
+.menu-item.off:hover { transform:none; border-color:var(--line); box-shadow:0 3px 0 var(--shadow); }
+
+/* keep the API pill clear of the last row */
+.menu-list { padding-bottom:6px; }
+
+/* the API pill is a diagnostic, not part of the design — keep it out of the way */
+.api-pill { opacity:.5; transform:scale(.85); transform-origin:left bottom; pointer-events:none; }
+
+/* the door button's title and subtitle are two spans in one wrapper; without
+   this they run together on one line */
+.door-btn > span:last-child { display:flex; flex-direction:column; text-align:left; }
+.door-btn .t { display:block; }
+.door-btn .s { display:block; }

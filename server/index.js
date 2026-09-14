@@ -183,6 +183,30 @@ app.post("/orders/:id/cancel", route(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// Every cart of yours that is still alive tonight, found by registration
+// number. This is what lets a student who closed the tab, cleared the browser
+// or picked up a different phone get back to their order — the server knows,
+// so nothing depends on the handset that placed it.
+app.get("/orders/active", route(async (req, res) => {
+  const reg = String(req.query.reg_no || "").trim();
+  if (!reg) return res.status(400).json({ error: "reg_no_required" });
+  const r = await pool.query(
+    `SELECT o.id, o.status, o.queue_no, b.name AS block, b.hostel_type,
+            o.amount_paise + o.tax_paise AS total_paise,
+            (SELECT COUNT(*)::int FROM orders x
+              WHERE x.counter_id = o.counter_id AND x.status = 'paid'
+                AND x.queue_no < o.queue_no) AS ahead
+       FROM orders o JOIN counters c ON c.id = o.counter_id
+       JOIN blocks b ON b.id = c.block_id
+      WHERE upper(o.reg_no) = upper($1) AND o.status IN ('paid','ready')
+      ORDER BY o.id DESC LIMIT 5`, [reg]);
+  res.json(r.rows.map(o => ({
+    order_id: Number(o.id), status: o.status, queue_no: o.queue_no,
+    block: o.block, hostel_type: o.hostel_type, total_paise: o.total_paise,
+    position: o.status === "paid" ? o.ahead + 1 : 0, ready: o.status === "ready",
+  })));
+}));
+
 // Live status of one cart: how many are ahead, how long that is, and whether
 // the food is ready. The phone polls this, so it carries everything at once.
 app.get("/orders/:id/status", route(async (req, res) => {

@@ -8,6 +8,7 @@ import Ticket from "./screens/Ticket.jsx";
 import Counter from "./screens/Counter.jsx";
 import Admin from "./screens/Admin.jsx";
 import Say from "./screens/Say.jsx";
+import LiveOrder from "./screens/LiveOrder.jsx";
 
 const LAST_ORDER = "nightit.order";
 const ROLE = "nightit.role";
@@ -52,17 +53,7 @@ function ThemePicker({ theme, setTheme }) {
 function Door() {
   useRole(null);
   const [theme, setTheme] = useTheme();
-  const [resume, setResume] = useState(null);
   const nav = useNavigate();
-
-  useEffect(() => {
-    let saved = null;
-    try { saved = JSON.parse(localStorage.getItem(LAST_ORDER) || "null"); } catch { /* ignore */ }
-    if (!saved?.id) return;
-    api.orderStatus(saved.id)
-      .then(s => { if (s.status === "paid" || s.status === "ready") setResume({ ...saved, s }); })
-      .catch(() => {});
-  }, []);
 
   return (
     <div className="app">
@@ -77,15 +68,7 @@ function Door() {
         <div className="action-stack"><ThemePicker theme={theme} setTheme={setTheme} /></div>
       </div>
 
-      {resume && (
-        <div className="resume">
-          <div className="r-copy">
-            <b>{resume.s.ready ? "Your food is ready" : `You are ${resume.s.position} in line`}</b>
-            {resume.s.block} · token {resume.s.queue_no}
-          </div>
-          <button onClick={() => nav(`/order/${resume.id}`)}>Open</button>
-        </div>
-      )}
+      <LiveOrder />
 
       <span className="sticker">who are you tonight?</span>
       <div className="door">
@@ -149,6 +132,8 @@ function Student({ hostelType }) {
         <button className={`tab ${tab === "say" ? "active" : ""}`}
                 onClick={() => setTab("say")}>Feedback</button>
       </div>
+
+      <LiveOrder regNo={regNo} />
 
       {tab === "order"
         ? <Order hostelType={hostelType} regNo={regNo} setRegNo={setRegNo} onOrdered={onOrdered} />

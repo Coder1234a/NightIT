@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS blocks (
   id serial PRIMARY KEY,
-  name text NOT NULL UNIQUE,
+  name text NOT NULL,
   hostel_type text NOT NULL CHECK (hostel_type IN ('mens','ladies')),
   opens_at time NOT NULL DEFAULT '22:30',
   closes_at time NOT NULL DEFAULT '00:30'
@@ -78,6 +78,17 @@ CREATE TABLE IF NOT EXISTS feedback (
 -- be a no-op on a fresh database and a repair on an old one, and it is safe to
 -- run any number of times.
 -- ---------------------------------------------------------------------------
+
+-- VIT really does have a men's A block and a ladies' A block, so the name on
+-- its own is not unique. Older databases were created with it unique; move
+-- them to the pair.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'blocks_name_key') THEN
+    ALTER TABLE blocks DROP CONSTRAINT blocks_name_key;
+  END IF;
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS blocks_name_side ON blocks (name, hostel_type);
 
 -- 'parcel' was renamed to 'takeaway'; do it before anything else touches it.
 DO $$

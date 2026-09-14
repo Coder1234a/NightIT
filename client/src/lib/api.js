@@ -33,6 +33,7 @@ export const api = {
   confirmOrder:  (id)           => call("POST", `/orders/${id}/confirm`),
   cancelOrder:   (id)           => call("POST", `/orders/${id}/cancel`),
   orderStatus:   (id)           => call("GET",  `/orders/${id}/status`),
+  activeOrders:  (regNo)        => call("GET",  `/orders/active?reg_no=${encodeURIComponent(regNo)}`),
   markReady:     (id)           => call("POST", `/orders/${id}/ready`),
   serveOrder:    (id)           => call("POST", `/orders/${id}/serve`),
   counterQueue:  (counterId)    => call("GET",  `/counter/${counterId}/queue`),

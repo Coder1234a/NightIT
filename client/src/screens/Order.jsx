@@ -5,6 +5,8 @@ import { tone, askToNotify } from "../lib/notify";
 
 // The student's ordering screen: pick a block, build a cart, see what the whole
 // cart will take including everyone already queued, then pay by UPI or cash.
+const BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
 export default function Order({ hostelType, regNo, setRegNo, onOrdered }) {
   const [blocks, setBlocks] = useState([]);
   const [blockId, setBlockId] = useState(null);
@@ -127,7 +129,8 @@ export default function Order({ hostelType, regNo, setRegNo, onOrdered }) {
       <div className="select-wrap">
         <select className="select-block" value={blockId ?? ""}
                 onChange={e => { setBlockId(Number(e.target.value)); setCart({}); }}>
-          {blocks.map(b => <option key={b.id} value={b.id}>{b.name} · {b.hostel_type}</option>)}
+          {/* the list is already filtered to one hostel, so the name is enough */}
+          {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
       </div>
 
@@ -148,28 +151,30 @@ export default function Order({ hostelType, regNo, setRegNo, onOrdered }) {
       <ul className="menu-list">
         {menu.map(i => (
           <li key={i.id}>
-            <div className={`menu-item ${i.image_url ? "has-thumb" : ""}`} style={{ cursor: "default" }}>
-              {i.image_url && (
-                <img className="thumb" src={i.image_url} alt="" loading="lazy"
-                     onError={e => { e.currentTarget.style.visibility = "hidden"; }} />
-              )}
+            <div className={`menu-item has-thumb ${i.available ? "" : "off"}`}>
+              {/* the photo is optional; a missing one falls back to a coloured
+                  tile rather than a hole in the row */}
+              <img className={`thumb ${i.image_url ? "" : "fallback"}`} alt="" loading="lazy"
+                   src={i.image_url || BLANK}
+                   onError={e => { e.currentTarget.classList.add("fallback");
+                                   e.currentTarget.src = BLANK; }} />
               <div className="item-copy">
-                <div className="item-name">
-                  {i.name}
-                  <span className="item-price">
-                    {rupees(i.price_paise)}<span className="excl">+tax</span>
-                  </span>
-                </div>
+                <div className="item-name">{i.name}</div>
                 <div className={`item-meta ${i.available ? "" : "closed"}`}>
                   {i.available
                     ? `${humanWait(Number(i.eta_seconds))} · ${i.remaining} left`
                     : i.state.replace(/_/g, " ")}
                 </div>
               </div>
-              <div className="qty">
-                <button onClick={() => bump(i, -1)} disabled={!cart[i.id]}>&minus;</button>
-                <span>{cart[i.id] || 0}</span>
-                <button onClick={() => bump(i, +1)} disabled={!i.available}>+</button>
+              <div className="item-right">
+                <div className="item-price">
+                  {rupees(i.price_paise)}<span className="excl">+tax</span>
+                </div>
+                <div className="qty">
+                  <button onClick={() => bump(i, -1)} disabled={!cart[i.id]}>&minus;</button>
+                  <span>{cart[i.id] || 0}</span>
+                  <button onClick={() => bump(i, +1)} disabled={!i.available}>+</button>
+                </div>
               </div>
             </div>
           </li>

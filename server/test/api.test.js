@@ -474,6 +474,38 @@ describe("serving from the counter", () => {
   });
 });
 
+describe("finding your order again", () => {
+  test("a live cart is findable by registration number alone", async () => {
+    await fresh();
+    const a = await paidCart([{ menu_item_id: F.a.id }], "upi", "26BCE9999");
+    const rows = (await api("GET", "/orders/active?reg_no=26BCE9999")).body;
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].order_id, a.id);
+    assert.ok(rows[0].block);
+    assert.equal(rows[0].position, 1);
+  });
+  test("the lookup ignores the case of the registration number", async () => {
+    await fresh();
+    await paidCart([{ menu_item_id: F.a.id }], "upi", "26BCE9999");
+    assert.equal((await api("GET", "/orders/active?reg_no=26bce9999")).body.length, 1);
+  });
+  test("a served cart drops out of the lookup", async () => {
+    await fresh();
+    const a = await paidCart([{ menu_item_id: F.a.id }], "upi", "26BCE9999");
+    await api("POST", "/redeem", { counter_id: a.counter, code: a.code });
+    assert.equal((await api("GET", "/orders/active?reg_no=26BCE9999")).body.length, 0);
+  });
+  test("somebody else's registration number returns nothing of yours", async () => {
+    await fresh();
+    await paidCart([{ menu_item_id: F.a.id }], "upi", "26BCE9999");
+    assert.equal((await api("GET", "/orders/active?reg_no=26BCE0000")).body.length, 0);
+  });
+  test("the lookup refuses an empty registration number", async () => {
+    await fresh();
+    assert.equal((await api("GET", "/orders/active?reg_no=")).status, 400);
+  });
+});
+
 describe("counter queue view", () => {
   test("the counter sees waiting carts in queue order with their items", async () => {
     await fresh();
@@ -481,7 +513,7 @@ describe("counter queue view", () => {
     await paidCart([{ menu_item_id: F.b.id }], "upi", "26BCE3103");
     const q = (await api("GET", `/counter/${F.mens.counter_id}/queue`)).body;
     assert.equal(q.length, 2);
-    assert.ok(q[0].items.includes("Maggi x2"));
+    assert.ok(q[0].items.includes(`${F.a.name} x2`));
     assert.ok(Number(q[0].queue_no) < Number(q[1].queue_no));
   });
   test("a served cart leaves the counter queue", async () => {

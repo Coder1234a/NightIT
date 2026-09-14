@@ -2,7 +2,7 @@
 
 Run 14–15 September 2026 against PostgreSQL 16.13 with `pgcrypto`, Node v22.
 
-**56 backend tests, 56 passing.** Plus a full three-role browser run of the
+**61 backend tests, 61 passing.** Plus a full three-role browser run of the
 merged frontend against a live backend.
 
 ## Coverage
@@ -20,6 +20,7 @@ merged frontend against a live backend.
 | counter queue view | 2 |
 | feedback, bugs, dashboard | 4 |
 | input validation | 5 |
+| finding your order again | 5 |
 
 Notable cases: two simultaneous carts fighting over the last portion (exactly
 one wins); two simultaneous scans of one code (served exactly once); a cart
@@ -77,6 +78,22 @@ database died with `column "queue_no" does not exist`, and later with
 had left the old overload behind. `001_schema.sql` now carries guarded
 `ALTER … IF NOT EXISTS` blocks and a queue-number backfill; `002_functions.sql`
 drops each function before redefining it.
+
+**11. An order was only findable from the phone that placed it.** The resume
+banner read `localStorage`, so a closed tab or a cleared cache lost a cart that
+was still being cooked. Replaced with `GET /orders/active?reg_no=…` — the
+server is the only thing that actually knows — and a strip on every student
+page rather than only the front door. Five tests cover the lookup, including
+that a served cart drops out of it and that somebody else's number returns
+nothing of yours.
+
+**12. The price floated inside the item name** and collided with it on any item
+whose name wrapped to two lines. The row is now three real columns, and a
+missing photo renders a coloured tile instead of the browser's broken-image
+glyph.
+
+**13. The front door's title and subtitle ran together on one line** — two
+spans in a flex row with no column wrapper.
 
 **10. `node_modules` slipped past `.gitignore`.** The pattern ended in a slash,
 which only matches real directories — a symlinked `node_modules` was staged for
