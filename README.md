@@ -1,0 +1,172 @@
+# NightIT
+
+Night mess ordering, queueing and pickup for VIT Vellore hostels.
+An add-on to MessIT. Built at **Hackulus '26** (SIAM VIT), 14–15 September 2026.
+
+**Live API:** `https://nightit-api.onrender.com`
+
+---
+
+## The problem
+
+Block entry closes at 9:00 PM for men and 8:30 PM for women. The night mess
+opens at 10:30 PM. By the time food is being served every student is already
+inside their own block and cannot walk to another one, so their block's counter
+is the only counter they have.
+
+You pay there and get two paper bills with the same number. The large one is
+your only proof of purchase. Lose it and your money is gone; if somebody else
+picks it up they can collect your order and nothing in the system would know.
+
+**The paper decides who eats, not the person.** NightIT replaces it with a
+six-digit code bound to a registration number, and a queue you can watch from
+your room instead of from the corridor.
+
+## What it does
+
+| | |
+|---|---|
+| **Cart** | Order several things at once. The app shows what the *whole cart* will take, counting everyone already queued ahead of you — not just cooking time. |
+| **Queue number** | Handed out per counter when you pay, the same number the staff work through. |
+| **Almost your turn** | When one or none are ahead, the phone buzzes and says start walking. |
+| **Food is ready** | The counter taps Ready; the student's screen turns green with a sound and a notification. |
+| **Pay your way** | UPI through Razorpay, or cash at the counter. Both end in the same place. |
+| **Live menu** | Items grey out when stock hits zero, and close themselves at their cut-off time. |
+| **Parcel or eat in** | Chosen at order time. |
+| **Feedback and bug reports** | Open to men's and ladies' hostel users alike. |
+
+Every block is different — menus, prices, counters, closing times, what runs
+out. None of that is in the code. It is all rows in the database, so onboarding
+a block means inserting rows, not shipping a release.
+
+## Layout
+
+```
+.
+├── render.yaml       Blueprint: API + database + static frontend
+├── docs/
+│   └── TEST_REPORT.md
+├── server/           Node + Express + PostgreSQL
+│   ├── index.js      15 endpoints
+│   ├── db.js         pool, timezone and demo-clock wiring
+│   ├── sql/          schema, functions, seed, indexes
+│   └── test/         49 tests
+└── client/           React + Vite
+    ├── src/lib/      api, Razorpay loader, sound and notifications
+    └── src/screens/  Order · Ticket · Counter · Admin · Say
+```
+
+## Running it
+
+**Backend** — needs Node 20+ and a PostgreSQL database.
+
+```bash
+cd server
+npm install
+cp .env.example .env          # put your own DATABASE_URL in it
+npm run migrate -- --seed
+npm start                     # http://localhost:3000/health
+npm test                      # 49 tests
+```
+
+**Frontend**
+
+```bash
+cd client
+npm install
+cp .env.example .env.local    # point VITE_API_URL at your API
+npm run dev
+```
+
+## Deploying
+
+Push to GitHub, then Render → **New → Blueprint** → pick the repo. `render.yaml`
+creates the API, a free PostgreSQL database and the static frontend, and wires
+`DATABASE_URL` and `VITE_API_URL` between them.
+
+Then set three variables on **nightit-api** in the Render dashboard:
+
+| Key | Value |
+|---|---|
+| `DEMO_TIME` | `23:00` while demoing; blank in real use |
+| `RAZORPAY_KEY_ID` | your `rzp_test_…` key |
+| `RAZORPAY_KEY_SECRET` | the matching secret |
+
+The free tier sleeps when idle, so the first request after a quiet period takes
+about 30 seconds. **Open the URL once before any demo.**
+
+## API
+
+| Method | Path | |
+|---|---|---|
+| GET | `/health` | liveness |
+| GET | `/payments/config` | the public Razorpay key, never the secret |
+| GET | `/blocks` | blocks and their counters |
+| GET | `/menu?block_id=1` | stock, cut-off, state, live wait estimate |
+| POST | `/orders` | `{reg_no, items:[{menu_item_id, qty}], mode, parcel}` — one cart |
+| POST | `/orders/:id/confirm` | payment done → pickup code + queue number |
+| POST | `/orders/:id/cancel` | unpaid cart, portions go back |
+| GET | `/orders/:id/status` | status, queue number, how many ahead, wait, ready |
+| POST | `/orders/:id/ready` | counter: food is ready |
+| POST | `/orders/:id/serve` | counter: handed over (used for cash) |
+| POST | `/redeem` | `{counter_id, code}` — serves once, refuses after |
+| GET | `/counter/:id/queue` | the live queue for one counter |
+| POST | `/stock` | staff stock control |
+| POST/GET | `/feedback` | feedback and bug reports |
+| GET | `/admin/summary` | four figures plus demand in 10-minute slots |
+
+## How the pickup code works
+
+The code lives on the order row. There is no OTP table, so nothing accumulates
+and nothing ever needs purging.
+
+- Randomness from `pgcrypto`'s `gen_random_bytes`, not `random()`.
+- Only a SHA-256 hash is stored. The plain code is returned exactly once.
+- A **partial** unique index — `(counter_id, otp_hash) WHERE status IN
+  ('paid','ready')` — means a code only has to be unique among carts *still
+  waiting at that counter*. Serving one frees its code, so the six-digit space
+  never fills up however many nights this runs.
+- Redemption is one conditional `UPDATE`, so two simultaneous scans can only
+  serve the cart once. There is a test for exactly that.
+
+## Three traps for anyone changing this
+
+**`CREATE UNIQUE INDEX IF NOT EXISTS` silently does nothing** when a non-unique
+index of that name already exists — no error, and the single-use guarantee is
+quietly off. `004_indexes.sql` drops first and runs after the seed.
+
+**The serving window crosses midnight**, so times of day cannot be compared
+directly: 23:00 is *before* 00:15 on the same night. Use `night_min()` for any
+new time comparison.
+
+**Render runs on UTC.** The pool pins its connection to `Asia/Kolkata`, or the
+database would think 23:00 IST is 17:30 and close everything.
+
+## Known limits
+
+- The hash salt is the counter plus the date, both guessable — this stops
+  casual database browsing, it is not password-grade.
+- No rate limit on redeem attempts yet.
+- The Razorpay webhook signature is not verified; confirmation is trusted from
+  the client. Fine for a test-mode demo, not for production.
+- Authentication is a typed registration number. Binding to the existing
+  biometric hostel entry system is the intended next step.
+- Cash carts are handed over against the queue number rather than a code,
+  because the student paid in person. Still a single one-way transition.
+
+## Team
+
+| | | |
+|---|---|---|
+| Vidhi Garg | 26BCE3103 | Frontend and demo |
+| Ashutosh Pradhan | 26BDE0113 | Payments and admin |
+| Anikeit Agarwal | 26BDE0124 | Backend and data |
+| Vedanshi Agrawal | 26BDE0168 | Research and pitch |
+
+The interface design system, the QR and scanner work are Vidhi's. The Razorpay
+loader and the dashboard are Ashutosh's. Both were built against mock data and
+are wired to the live API here.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
