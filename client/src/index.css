@@ -45,8 +45,27 @@ button,input,select { font:inherit; } button { -webkit-tap-highlight-color:trans
 .mode-btn.active { background:var(--pink); color:#fff; box-shadow:0 4px 0 #d52f67; transform:translateY(-1px); }
 .menu-list { display:flex; flex-direction:column; gap:13px; padding:0; margin:0; list-style:none; }
 .menu-item { display:flex; align-items:center; gap:13px; width:100%; padding:14px; border:1px solid var(--line); border-radius:23px 23px 8px 23px; background:var(--card); color:var(--ink); text-align:left; cursor:pointer; box-shadow:0 6px 0 var(--shadow); transition:transform .2s,box-shadow .2s,border-color .2s; }
-.menu-item::before { content:''; flex:0 0 50px; width:50px; height:50px; border-radius:17px 17px 6px 17px; background:linear-gradient(135deg,var(--yellow),var(--orange)); box-shadow:inset 0 -5px 0 rgba(255,255,255,.23); }
-li:nth-child(2) .menu-item::before { background:linear-gradient(135deg,var(--lilac),#7668ed); } li:nth-child(3) .menu-item::before { background:linear-gradient(135deg,var(--mint),var(--green)); } li:nth-child(4) .menu-item::before { background:linear-gradient(135deg,#ffc2d4,var(--pink)); } li:nth-child(5) .menu-item::before { background:linear-gradient(135deg,var(--blue),#4a9fe0); }
+/* Food thumbnails: keep food-menu.png beside this CSS file. */
+.menu-item::before { content:''; flex:0 0 50px; width:50px; height:50px; border-radius:17px 17px 6px 17px; background-image:url('food-menu.png'); background-repeat:no-repeat; background-size:500% 400%; background-position:0% 0%; box-shadow:0 3px 7px rgba(59,35,80,.18); }
+li:nth-child(2) .menu-item::before { background-position:25% 0%; }
+li:nth-child(3) .menu-item::before { background-position:50% 0%; }
+li:nth-child(4) .menu-item::before { background-position:75% 0%; }
+li:nth-child(5) .menu-item::before { background-position:100% 0%; }
+li:nth-child(6) .menu-item::before { background-position:0% 33.333%; }
+li:nth-child(7) .menu-item::before { background-position:25% 33.333%; }
+li:nth-child(8) .menu-item::before { background-position:50% 33.333%; }
+li:nth-child(9) .menu-item::before { background-position:75% 33.333%; }
+li:nth-child(10) .menu-item::before { background-position:100% 33.333%; }
+li:nth-child(11) .menu-item::before { background-position:0% 66.666%; }
+li:nth-child(12) .menu-item::before { background-position:25% 66.666%; }
+li:nth-child(13) .menu-item::before { background-position:50% 66.666%; }
+li:nth-child(14) .menu-item::before { background-position:75% 66.666%; }
+li:nth-child(15) .menu-item::before { background-position:100% 66.666%; }
+li:nth-child(16) .menu-item::before { background-position:0% 100%; }
+li:nth-child(17) .menu-item::before { background-position:25% 100%; }
+li:nth-child(18) .menu-item::before { background-position:50% 100%; }
+li:nth-child(19) .menu-item::before { background-position:75% 100%; }
+li:nth-child(20) .menu-item::before { background-position:100% 100%; }
 .menu-item:hover:not(:disabled),.menu-item:focus-visible { transform:translateY(-4px) rotate(-.5deg); border-color:var(--pink); box-shadow:0 10px 0 var(--shadow); outline:0; }
 .menu-item:active:not(:disabled) { transform:translateY(2px); box-shadow:0 2px 0 var(--shadow); }
 .menu-item:disabled { opacity:.58; cursor:not-allowed; } .menu-item:disabled::before { filter:grayscale(1); }
