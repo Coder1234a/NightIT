@@ -1,6 +1,15 @@
 // Every call to the backend goes through here, so the base URL and the error
 // shape are defined in exactly one place.
-const BASE = import.meta.env.VITE_API_URL || "https://nightit-api.onrender.com";
+// Render hands this over as a bare hostname, a local run gives a full URL, and
+// a trailing slash from either would double up in every path. Normalise all
+// three shapes into one base that always starts with a scheme.
+function normalise(raw) {
+  const v = (raw || "https://nightit-api.onrender.com").trim().replace(/\/+$/, "");
+  if (/^https?:\/\//.test(v)) return v;
+  return (v.startsWith("localhost") || v.startsWith("127.0.0.1") ? "http://" : "https://") + v;
+}
+
+const BASE = normalise(import.meta.env.VITE_API_URL);
 
 async function call(method, path, body) {
   const res = await fetch(BASE + path, {

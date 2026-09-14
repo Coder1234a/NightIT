@@ -7,7 +7,7 @@ services:
     runtime: node
     rootDir: server
     plan: free
-    buildCommand: npm ci && npm run migrate -- --seed-if-empty
+    buildCommand: npm install && npm run migrate -- --seed-if-empty
     startCommand: npm start
     healthCheckPath: /health
     envVars:
@@ -26,7 +26,7 @@ services:
     name: nightit-client
     runtime: static
     rootDir: client
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
