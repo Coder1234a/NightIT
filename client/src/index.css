@@ -302,3 +302,298 @@ li:nth-child(5n)   .thumb.fallback { background:linear-gradient(135deg,var(--blu
 .door-btn > span:last-child { display:flex; flex-direction:column; text-align:left; }
 .door-btn .t { display:block; }
 .door-btn .s { display:block; }
+
+
+/* ---- polish pass: animated atmosphere + staff palette ---- */
+body[data-role="staff"] {
+  --pink:#0f9b8e;
+  --orange:#f08a4b;
+  --yellow:#f6ca58;
+  --lilac:#8fd6d0;
+  --mint:#b8ead8;
+  --blue:#9bd8e4;
+  --shadow:#c9ddd9;
+  background:#dcefeb;
+}
+body.theme-dark[data-role="staff"] {
+  --ink:#f4fffc;
+  --muted:#a8c7c2;
+  --paper:#101f21;
+  --card:#193033;
+  --line:#315154;
+  --shadow:#081113;
+  background:#071315;
+}
+body.theme-system[data-role="staff"] { color-scheme:light; }
+@media (prefers-color-scheme:dark) {
+  body.theme-system[data-role="staff"] {
+    --ink:#f4fffc; --muted:#a8c7c2; --paper:#101f21; --card:#193033;
+    --line:#315154; --shadow:#081113; background:#071315;
+  }
+}
+body[data-role="staff"] .app::before {
+  background:linear-gradient(135deg,var(--mint),var(--blue));
+  opacity:.8;
+}
+body[data-role="staff"] .staff-shell h1 span { color:var(--orange); }
+body[data-role="staff"] .staff-shell .sticker { background:var(--mint); color:#14564f; }
+body[data-role="staff"] .staff-shell .btn-primary,
+body[data-role="staff"] .staff-shell .btn-mini { background:linear-gradient(105deg,var(--pink),var(--orange)); }
+body[data-role="staff"] .staff-shell .tab.active,
+body[data-role="staff"] .staff-shell .mode-btn.active { background:var(--pink); }
+body[data-role="staff"] .staff-shell .tile { border-color:rgba(15,155,142,.35); }
+
+/* Ambient bubbles keep the existing visual language but make the background feel alive. */
+.app::before { animation:ambientBlob 12s ease-in-out infinite alternate; }
+.app::after { animation:ambientBlobTwo 15s ease-in-out infinite alternate; }
+.bubble-field::before,
+.bubble-field::after {
+  content:"";
+  position:absolute;
+  display:block;
+  width:24px;
+  height:24px;
+  border:2px solid rgba(255,255,255,.62);
+  border-radius:50%;
+  background:linear-gradient(135deg,rgba(255,209,102,.85),rgba(255,79,135,.7));
+  box-shadow:inset 0 3px 5px rgba(255,255,255,.36),0 6px 12px rgba(59,35,80,.1);
+  pointer-events:auto;
+  cursor:pointer;
+  animation:driftSmall 6s ease-in-out infinite;
+}
+.bubble-field::before { top:34%; right:43%; }
+.bubble-field::after { top:76%; left:38%; width:18px; height:18px; background:linear-gradient(135deg,var(--mint),var(--blue)); animation-delay:-2s; }
+.food-bubble { will-change:transform; }
+.food-bubble:nth-child(2n) { animation-duration:6.5s; }
+.food-bubble:nth-child(3n) { animation-duration:7.2s; }
+.menu-item,.door-btn,.q-row,.tile,.queue-card,.cart-bar { animation:cardArrive .5s both; }
+.menu-list li:nth-child(2) .menu-item,.door-btn:nth-child(2),.q-row:nth-child(2) { animation-delay:.06s; }
+.menu-list li:nth-child(3) .menu-item,.door-btn:nth-child(3),.q-row:nth-child(3) { animation-delay:.12s; }
+.menu-list li:nth-child(4) .menu-item,.q-row:nth-child(4) { animation-delay:.18s; }
+.menu-list li:nth-child(5) .menu-item,.q-row:nth-child(5) { animation-delay:.24s; }
+.menu-item::before,.door-btn .blob { transition:transform .25s ease,filter .25s ease; }
+.menu-item:hover:not(:disabled)::before,.door-btn:hover .blob { transform:scale(1.1) rotate(7deg); filter:saturate(1.18); }
+.btn-primary,.btn-mini,.btn-camera,.scanner-link { transition:transform .18s ease,box-shadow .18s ease,filter .18s ease; }
+.btn-primary:hover:not(:disabled),.btn-mini:hover,.btn-camera:hover,.scanner-link:hover { filter:saturate(1.12) brightness(1.04); }
+@keyframes ambientBlob { from { transform:rotate(25deg) translate3d(0,0,0); } to { transform:rotate(35deg) translate3d(-12px,14px,0); } }
+@keyframes ambientBlobTwo { from { transform:translate3d(0,0,0) rotate(0); } to { transform:translate3d(18px,-12px) rotate(18deg); } }
+@keyframes driftSmall { 0%,100% { transform:translateY(0) rotate(-4deg); } 50% { transform:translateY(-12px) rotate(6deg); } }
+@keyframes cardArrive { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+@media (prefers-reduced-motion:reduce) {
+  .app::before,.app::after,.bubble-field::before,.bubble-field::after,.menu-item,.door-btn,.q-row,.tile,.queue-card,.cart-bar { animation:none; }
+}
+
+
+/* ---- live-order contrast fix ---- */
+.live-strip { color:var(--ink); }
+.ls-copy b { display:block; color:var(--ink); font-weight:700; }
+.ls-copy span { color:var(--muted); }
+body.theme-dark .live-strip { background:var(--card); }
+body.theme-dark .live-strip.hot { background:rgba(34,181,115,.16); }
+@media (prefers-color-scheme:dark) {
+  body.theme-system .live-strip { background:var(--card); }
+  body.theme-system .live-strip.hot { background:rgba(34,181,115,.16); }
+}
+
+
+/* ---- final live-order readability override ---- */
+body.theme-dark .app .live-strip,
+body.theme-dark .app .live-strip:hover { background:var(--card) !important; color:var(--ink) !important; }
+body.theme-dark .app .live-strip .ls-copy b { color:var(--ink) !important; opacity:1 !important; text-shadow:none; }
+body.theme-dark .app .live-strip .ls-copy span { color:var(--muted) !important; opacity:1 !important; }
+@media (prefers-color-scheme:dark) {
+  body.theme-system .app .live-strip,
+  body.theme-system .app .live-strip:hover { background:var(--card) !important; color:var(--ink) !important; }
+  body.theme-system .app .live-strip .ls-copy b { color:var(--ink) !important; opacity:1 !important; text-shadow:none; }
+  body.theme-system .app .live-strip .ls-copy span { color:var(--muted) !important; opacity:1 !important; }
+}
+
+
+/* ---- definitive live-order contrast fix for mens, ladies, dark and system themes ---- */
+.live-strip,
+.live-strip:hover,
+body[data-role="mens"] .live-strip,
+body[data-role="ladies"] .live-strip,
+body[data-role="staff"] .live-strip {
+  background:var(--card) !important;
+  color:var(--ink) !important;
+}
+.live-strip .ls-copy b { color:var(--ink) !important; opacity:1 !important; text-shadow:none !important; }
+.live-strip .ls-copy span { color:var(--muted) !important; opacity:1 !important; }
+.live-strip .ls-go { color:var(--pink) !important; opacity:1 !important; }
+.live-strip.hot { background:rgba(34,181,115,.16) !important; }
+
+
+/* ---- explicit student live-order readability ---- */
+body[data-role="mens"] .app .live-strip,
+body[data-role="mens"] .app .live-strip:hover {
+  background:#fff0e6 !important;
+}
+body[data-role="mens"] .app .live-strip .ls-copy b { color:#24202d !important; }
+body[data-role="mens"] .app .live-strip .ls-copy span { color:#756d7d !important; }
+body[data-role="ladies"] .app .live-strip,
+body[data-role="ladies"] .app .live-strip:hover {
+  background:#f4ecff !important;
+}
+body[data-role="ladies"] .app .live-strip .ls-copy b { color:#24202d !important; }
+body[data-role="ladies"] .app .live-strip .ls-copy span { color:#756d7d !important; }
+body.theme-dark[data-role="mens"] .app .live-strip,
+body.theme-dark[data-role="ladies"] .app .live-strip,
+body.theme-system[data-role="mens"] .app .live-strip,
+body.theme-system[data-role="ladies"] .app .live-strip { background:var(--card) !important; }
+body.theme-dark[data-role="mens"] .app .live-strip .ls-copy b,
+body.theme-dark[data-role="ladies"] .app .live-strip .ls-copy b,
+body.theme-system[data-role="mens"] .app .live-strip .ls-copy b,
+body.theme-system[data-role="ladies"] .app .live-strip .ls-copy b { color:#fff8f2 !important; }
+body.theme-dark[data-role="mens"] .app .live-strip .ls-copy span,
+body.theme-dark[data-role="ladies"] .app .live-strip .ls-copy span,
+body.theme-system[data-role="mens"] .app .live-strip .ls-copy span,
+body.theme-system[data-role="ladies"] .app .live-strip .ls-copy span { color:#bcb3c5 !important; }
+@media (prefers-color-scheme:dark) {
+  body.theme-system[data-role="mens"] .app .live-strip,
+  body.theme-system[data-role="ladies"] .app .live-strip { background:var(--card) !important; }
+  body.theme-system[data-role="mens"] .app .live-strip .ls-copy b,
+  body.theme-system[data-role="ladies"] .app .live-strip .ls-copy b { color:#fff8f2 !important; }
+  body.theme-system[data-role="mens"] .app .live-strip .ls-copy span,
+  body.theme-system[data-role="ladies"] .app .live-strip .ls-copy span { color:#bcb3c5 !important; }
+}
+
+
+
+/* ---- quick visual polish: preserve student theme, distinguish admin ---- */
+body[data-role="staff"] .staff-shell {
+  --admin-ink:#163b46;
+  --admin-muted:#55747a;
+  --admin-card:#f5fffd;
+  --admin-line:#b9ded8;
+  background:linear-gradient(180deg,rgba(230,246,244,.72),rgba(245,255,253,.22));
+  border-radius:30px;
+}
+body[data-role="staff"] .staff-shell .tile,
+body[data-role="staff"] .staff-shell .q-row,
+body[data-role="staff"] .staff-shell .queue-card,
+body[data-role="staff"] .staff-shell .field,
+body[data-role="staff"] .staff-shell .tabs {
+  border-color:var(--admin-line);
+}
+body[data-role="staff"] .staff-shell .tile {
+  background:linear-gradient(145deg,var(--admin-card),#e6f6f4);
+  box-shadow:0 5px 0 #c4e3df;
+}
+body[data-role="staff"] .staff-shell .tile b,
+body[data-role="staff"] .staff-shell h1 { color:var(--admin-ink); }
+body[data-role="staff"] .staff-shell .tile span,
+body[data-role="staff"] .staff-shell .section-label { color:var(--admin-muted); }
+body[data-role="staff"] .staff-shell .tabs { background:#d9efeb; }
+body[data-role="staff"] .staff-shell .tab.active {
+  background:linear-gradient(105deg,#0f9b8e,#1e7a9c);
+  color:#fff;
+  box-shadow:0 4px 0 #0a6d63;
+}
+body[data-role="staff"] .staff-shell .btn-primary,
+body[data-role="staff"] .staff-shell .btn-mini {
+  background:linear-gradient(105deg,#0f9b8e,#1e7a9c);
+  box-shadow:0 5px 0 #0a6d63;
+}
+body[data-role="staff"] .staff-shell .q-row.ready { border-color:#45b99d; }
+body[data-role="staff"] .staff-shell .q-row .q-no { background:#c5eee0; color:#14564f; }
+body[data-role="staff"] .staff-shell .q-row.ready .q-no { background:#45b99d; color:#073d36; }
+
+/* More life in the existing background language; no theme or layout change. */
+.app::before,.app::after { will-change:transform; }
+.menu-item,.door-btn,.q-row,.tile,.queue-card { will-change:transform; }
+.menu-item:hover:not(:disabled),.door-btn:hover,.q-row:hover,.tile:hover {
+  transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;
+}
+.tile:hover { transform:translateY(-3px) rotate(.35deg); box-shadow:0 9px 0 var(--shadow); }
+.q-row:hover { transform:translateX(3px); }
+.menu-item:focus-visible,.door-btn:focus-visible,.tab:focus-visible,.btn-primary:focus-visible {
+  outline:3px solid color-mix(in srgb,var(--pink) 45%,transparent);
+  outline-offset:3px;
+}
+@media (prefers-reduced-motion:reduce) {
+  .tile:hover,.q-row:hover { transform:none; }
+}
+
+
+/* ---- direct admin overrides (works with staff/admin shell class names) ---- */
+.admin,.admin-shell,.admin-page,.staff-shell,[data-role="admin"],[data-role="staff"] {
+  --pink:#0f9b8e;
+  --orange:#1e7a9c;
+  --yellow:#f6ca58;
+  --lilac:#8fd6d0;
+  --mint:#b8ead8;
+  --blue:#9bd8e4;
+  --paper:#effaf8;
+  --card:#ffffff;
+  --line:#b9ded8;
+  --shadow:#b7d8d3;
+  background-color:#dcefeb;
+  background-image:radial-gradient(circle at 8% 12%,rgba(255,255,255,.8) 0 3px,transparent 4px),radial-gradient(circle at 88% 72%,rgba(15,155,142,.12) 0 80px,transparent 81px);
+}
+.admin .app,.admin-shell .app,.admin-page .app,.staff-shell,.admin [class*="card"],[data-role="admin"] .app,[data-role="staff"] .app {
+  background:var(--paper);
+}
+.admin .tile,.admin-shell .tile,.admin-page .tile,.staff-shell .tile,
+.admin .q-row,.admin-shell .q-row,.admin-page .q-row,.staff-shell .q-row {
+  border-color:#9fd0c9;
+  background:linear-gradient(145deg,#fff,#e7f7f4);
+  box-shadow:0 6px 0 #b7d8d3;
+}
+.admin .tab.active,.admin-shell .tab.active,.admin-page .tab.active,.staff-shell .tab.active,
+.admin .btn-primary,.admin-shell .btn-primary,.admin-page .btn-primary,.staff-shell .btn-primary {
+  background:linear-gradient(105deg,#0f9b8e,#1e7a9c);
+  box-shadow:0 5px 0 #087267;
+}
+.admin .app::before,.admin-shell .app::before,.admin-page .app::before,.staff-shell::before,
+[data-role="admin"] .app::before,[data-role="staff"] .app::before {
+  background:linear-gradient(135deg,#8fd6d0,#1e7a9c);
+  opacity:.85;
+}
+.admin .tile:hover,.admin-shell .tile:hover,.admin-page .tile:hover,.staff-shell .tile:hover {
+  transform:translateY(-5px) rotate(.5deg);
+  box-shadow:0 11px 0 #b7d8d3;
+}
+@keyframes adminGlow { 0%,100%{box-shadow:0 0 0 rgba(15,155,142,0)} 50%{box-shadow:0 0 22px rgba(15,155,142,.18)} }
+.admin .queue-card,.admin-shell .queue-card,.admin-page .queue-card,.staff-shell .queue-card { animation:adminGlow 3.5s ease-in-out infinite; }
+
+
+/* ---- dark theme fix: order-position card for boys and girls ---- */
+body.theme-dark[data-role="mens"] .app .live-strip,
+body.theme-dark[data-role="ladies"] .app .live-strip,
+body.theme-dark[data-role="mens"] .app .live-strip:hover,
+body.theme-dark[data-role="ladies"] .app .live-strip:hover,
+body.theme-system[data-role="mens"] .app .live-strip,
+body.theme-system[data-role="ladies"] .app .live-strip,
+body.theme-system[data-role="mens"] .app .live-strip:hover,
+body.theme-system[data-role="ladies"] .app .live-strip:hover {
+  background:#292334 !important;
+  border-color:#ff79a8 !important;
+  color:#fff8f2 !important;
+  box-shadow:0 5px 0 #110e18 !important;
+}
+body.theme-dark[data-role="mens"] .app .live-strip .ls-copy b,
+body.theme-dark[data-role="ladies"] .app .live-strip .ls-copy b,
+body.theme-system[data-role="mens"] .app .live-strip .ls-copy b,
+body.theme-system[data-role="ladies"] .app .live-strip .ls-copy b {
+  color:#fff8f2 !important;
+}
+body.theme-dark[data-role="mens"] .app .live-strip .ls-copy span,
+body.theme-dark[data-role="ladies"] .app .live-strip .ls-copy span,
+body.theme-system[data-role="mens"] .app .live-strip .ls-copy span,
+body.theme-system[data-role="ladies"] .app .live-strip .ls-copy span {
+  color:#d8cedd !important;
+}
+body.theme-dark[data-role="mens"] .app .live-strip .ls-go,
+body.theme-dark[data-role="ladies"] .app .live-strip .ls-go,
+body.theme-system[data-role="mens"] .app .live-strip .ls-go,
+body.theme-system[data-role="ladies"] .app .live-strip .ls-go {
+  color:#ffd166 !important;
+}
+@media (prefers-color-scheme:dark) {
+  body.theme-system[data-role="mens"] .app .live-strip,
+  body.theme-system[data-role="ladies"] .app .live-strip {
+    background:#292334 !important;
+    color:#fff8f2 !important;
+  }
+}
